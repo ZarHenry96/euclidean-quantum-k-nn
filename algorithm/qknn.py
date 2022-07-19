@@ -137,7 +137,6 @@ def build_qknn_circuit(training_df, target_df, N, d, encoding, exec_type):
 
         # Residual (for unitary norm)
         index = 2 * instance_index + (2 ** (index_qubits + 1)) * (2 * d + features_offset + 2)
-        # print(training_norms[-1]**2)
         amplitudes[index] = amplitudes_base_value * math.sqrt(max(
             1.0 - (3 * multiplication_factor**2 * training_norms[-1]**2 + translation_feature_abs_value**2),
             0.0
@@ -183,7 +182,6 @@ def build_qknn_circuit(training_df, target_df, N, d, encoding, exec_type):
     # Set all "target CNOT-SWAP qubit + index_register + features_register" amplitudes
     target_cnot_swap_qubit = 1
     circuit.initialize(amplitudes, qr[target_cnot_swap_qubit: target_cnot_swap_qubit + init_qubits])
-    print('\n' + '-' * 90 + '\n Norm of init amplitudes: ' + str(np.linalg.norm(amplitudes)) + '\n' + '-' * 90 + '\n')
 
     # Add the CNOT-SWAP gates
     circuit.h(qr[0])

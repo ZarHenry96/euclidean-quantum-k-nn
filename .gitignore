@@ -128,5 +128,11 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
+# Idea editor
+.idea
+
 # Results directories
 results/
+
+# Temporary files folders
+tmp/
