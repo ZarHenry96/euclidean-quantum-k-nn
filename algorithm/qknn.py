@@ -16,8 +16,8 @@ from algorithm.utils import save_exp_config, select_backend, save_data_to_txt_fi
 
 
 def load_and_normalize_data(training_data_file, target_instance_file, res_input_dir, verbose=True, store=True):
-    training_df = pd.read_csv(training_data_file, sep=',', float_precision='high')
-    target_df = pd.read_csv(target_instance_file, sep=',', float_precision='high')
+    training_df = pd.read_csv(training_data_file, sep=',')
+    target_df = pd.read_csv(target_instance_file, sep=',')
 
     # Copy the input files inside the results directory (if needed)
     if store:
@@ -33,7 +33,7 @@ def load_and_normalize_data(training_data_file, target_instance_file, res_input_
 
     # Compute the min-max average value and the range for each attribute
     training_min_max_avg = \
-        (training_df.iloc[:, :features_number].min() + training_df.iloc[:, :features_number].max()) / 2.0
+        (training_df.iloc[:, :features_number].min() + training_df.iloc[:, :features_number].max()) / 2
     training_range = training_df.iloc[:, :features_number].max() - training_df.iloc[:, :features_number].min()
 
     # Replace the zero ranges with 1 in order to avoid divisions by 0
@@ -44,7 +44,7 @@ def load_and_normalize_data(training_data_file, target_instance_file, res_input_
     # Normalize the target instance (and clip attributes outside the desired range)
     target_df.iloc[0, :features_number] = \
         (target_df.iloc[0, :features_number] - training_min_max_avg) / (training_range * sqrt_features_number)
-    lower_bound, upper_bound = -1.0 / (2 * sqrt_features_number), 1.0 / (2 * sqrt_features_number)
+    lower_bound, upper_bound = -1 / (2 * sqrt_features_number), 1 / (2 * sqrt_features_number)
     for attribute_index, attribute_val in enumerate(target_df.iloc[0, 0:features_number]):
         target_df.iloc[0, attribute_index] = max(min(upper_bound, attribute_val), lower_bound)
 
@@ -95,13 +95,13 @@ def build_qknn_circuit(training_df, target_df, N, d, encoding, exec_type):
     # Data structures for the joint initialization of the target CNOT-SWAP qubit, the index and features registers
     init_qubits = 1 + index_qubits + features_qubits
     amplitudes = np.zeros(2 ** init_qubits)
-    amplitudes_base_value = 1.0 / math.sqrt(2 * N)
+    amplitudes_base_value = math.sqrt(1 / (2 * N))
 
     # Encoding variables
     if encoding == 'extension':
-        multiplication_factor, features_offset, translation_feature_abs_value = (2.0 / math.sqrt(3)), 0, 0.0
+        multiplication_factor, features_offset, translation_feature_abs_value = math.sqrt(4 / 3), 0, 0
     else:
-        multiplication_factor, features_offset, translation_feature_abs_value = 1.0, 1, 0.5
+        multiplication_factor, features_offset, translation_feature_abs_value = 1, 1, 0.5
 
     # Training data and target instance norms
     training_norms = []
@@ -132,15 +132,14 @@ def build_qknn_circuit(training_df, target_df, N, d, encoding, exec_type):
 
         # Zero value
         index = 2 * instance_index + (2 ** (index_qubits + 1)) * (2 * d + features_offset + 1)
-        amplitudes[index] = amplitudes_base_value * 0.0
-        encoded_training_set[-1].append(0.0)
+        amplitudes[index] = amplitudes_base_value * 0
+        encoded_training_set[-1].append(0)
 
         # Residual (for unitary norm)
         index = 2 * instance_index + (2 ** (index_qubits + 1)) * (2 * d + features_offset + 2)
-        amplitudes[index] = amplitudes_base_value * math.sqrt(max(
-            1.0 - (3 * multiplication_factor**2 * training_norms[-1]**2 + translation_feature_abs_value**2),
-            0.0
-        ))
+        amplitudes[index] = amplitudes_base_value * math.sqrt(
+            1 - (3 * multiplication_factor**2 * training_norms[-1]**2 + translation_feature_abs_value**2)
+        )
         encoded_training_set[-1].append(amplitudes[index] / amplitudes_base_value)
 
     # Compute the target instance amplitudes
@@ -167,17 +166,16 @@ def build_qknn_circuit(training_df, target_df, N, d, encoding, exec_type):
 
         # Residual (for unitary norm)
         index = 1 + 2 * j + (2 ** (index_qubits + 1)) * (2 * d + features_offset + 1)
-        amplitudes[index] = amplitudes_base_value * math.sqrt(max(
-            1.0 - (2 * multiplication_factor**2 * target_norm**2 + multiplication_factor**2 * training_norms[j]**2 +
-                   translation_feature_abs_value**2),
-            0.0
-        ))
+        amplitudes[index] = amplitudes_base_value * math.sqrt(
+            1 - (2 * multiplication_factor**2 * target_norm**2 + multiplication_factor**2 * training_norms[j]**2 +
+                 translation_feature_abs_value**2)
+        )
         encoded_target_instances[-1].append(amplitudes[index] / amplitudes_base_value)
 
         # Zero value
         index = 1 + 2 * j + (2 ** (index_qubits + 1)) * (2 * d + features_offset + 2)
-        amplitudes[index] = amplitudes_base_value * 0.0
-        encoded_target_instances[-1].append(0.0)
+        amplitudes[index] = amplitudes_base_value * 0
+        encoded_target_instances[-1].append(0)
 
     # Set all "target CNOT-SWAP qubit + index_register + features_register" amplitudes
     target_cnot_swap_qubit = 1
@@ -299,7 +297,7 @@ def run_qknn(training_data_file, target_instance_file, k, exec_type, encoding, b
     N, d = len(training_df), len(training_df.columns) - 1
 
     # Get the original training dataframe
-    original_training_df = pd.read_csv(training_data_file, sep=',', float_precision='high')
+    original_training_df = pd.read_csv(training_data_file, sep=',')
 
     # If it is a classical execution, run the classical KNN and exit
     if exec_type == 'classical':
@@ -350,7 +348,7 @@ def run_qknn(training_data_file, target_instance_file, k, exec_type, encoding, b
 
     # Process the results depending on the execution modality
     if exec_type == 'statevector':
-        output_statevector = result.get_statevector(circuit, decimals=10)
+        output_statevector = result.get_statevector(circuit, decimals=15)
         if verbose:
             print(f'\nOutput state vector:\n{list(output_statevector)}')
         if store_results:

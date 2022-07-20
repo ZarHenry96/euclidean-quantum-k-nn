@@ -12,7 +12,7 @@ def print_cknn_results(verb_to_print, k, nearest_neighbors, training_instances, 
     index_max_chars = str(len(str(len(training_instances))))
     for index, distance in zip(nearest_neighbors[1][0], nearest_neighbors[0][0]):
         element = np.array2string(training_instances[index], separator=', ')
-        print(('    distance: {:.15f}, index: {:'+index_max_chars+'d}, element: {}')
+        print(('    distance: {:.10f}, index: {:'+index_max_chars+'d}, element: {}')
               .format(distance, index, element), file=file)
 
 

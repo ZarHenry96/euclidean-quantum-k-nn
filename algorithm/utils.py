@@ -54,7 +54,7 @@ def print_qknn_results(p0, p1, index_qubits, index_and_ancillary_joint_p, euclid
     if file == sys.stdout:
         print()
     print('P(ancillary_qubit_state):', file=file)
-    print('\tP(0) = {:.15f}\tP(1) = {:.15f}'.format(p0, p1), file=file)
+    print('\tP(0) = {:.10f}\tP(1) = {:.10f}'.format(p0, p1), file=file)
 
     index_decimal_max_chars = str(len(str(2 ** index_qubits - 1)))
 
@@ -63,15 +63,15 @@ def print_qknn_results(p0, p1, index_qubits, index_and_ancillary_joint_p, euclid
         index_decimal_state = int(index_binary_state, 2)
         print(('\tindex state {:'+index_decimal_max_chars+'d} (binary: {})')
               .format(index_decimal_state, index_binary_state), file=file)
-        print(('\t\tP({:'+index_decimal_max_chars+'d},0) = {:.15f}    P({:'+index_decimal_max_chars+'d},1) = {:.15f}')
+        print(('\t\tP({:'+index_decimal_max_chars+'d},0) = {:.10f}    P({:'+index_decimal_max_chars+'d},1) = {:.10f}')
               .format(index_decimal_state, joint_p["0"], index_decimal_state, joint_p["1"]), file=file)
 
-    print('Euclidean distances (w/o nonexistent index states):', file=file)
+    print('\nEuclidean distances (w/o nonexistent index states):', file=file)
     for index_decimal_state, distances in euclidean_distances.items():
         index_binary_state = ('{0:0' + str(index_qubits) + 'b}').format(index_decimal_state)
         print(('\tindex state {:'+index_decimal_max_chars+'d} (binary: {})')
               .format(index_decimal_state, index_binary_state), file=file)
-        print("\t\t'zero' estimate = {:.15f}    'one' estimate = {:.15f}    'avg' estimate = {:.15f}"
+        print("\t\t'zero' estimate = {:.10f}    'one' estimate = {:.10f}    'avg' estimate = {:.10f}"
               .format(distances["zero"], distances["one"], distances["avg"]), file=file)
 
     print(f"\nInstances sorted according to the '{sorting_dist_estimate}' distance estimate  (w/o nonexistent index"
@@ -80,7 +80,7 @@ def print_qknn_results(p0, p1, index_qubits, index_and_ancillary_joint_p, euclid
         distance_value = euclidean_distances[index_decimal_state][sorting_dist_estimate]
         if i == k:
             print('\t' + '-' * 34, file=file)
-        print(('\tindex state {:'+index_decimal_max_chars+'d}: {:.15f}')
+        print(('\tindex state {:'+index_decimal_max_chars+'d}: {:.10f}')
               .format(index_decimal_state, distance_value), file=file)
 
     print(f'\nThe normalized {k} nearest neighbors for the target instance provided are:', file=file)
