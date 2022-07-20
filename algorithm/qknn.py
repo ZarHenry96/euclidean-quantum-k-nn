@@ -271,7 +271,7 @@ def extract_euclidean_distances(index_and_ancillary_joint_p, N, index_qubits, en
         sqrt_arg_1 = get_sqrt_argument_from_scalar_product(scalar_prod_1, squared_target_norm, encoding)
         euclidean_distances[j]['one'] = math.sqrt(sqrt_arg_1)
 
-        euclidean_distances[j]['avg'] = (euclidean_distances[j]['zero'] + euclidean_distances[j]['one']) / 2.0
+        euclidean_distances[j]['avg'] = (euclidean_distances[j]['zero'] + euclidean_distances[j]['one']) / 2
 
     return euclidean_distances
 
