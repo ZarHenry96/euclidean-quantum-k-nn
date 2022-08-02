@@ -233,7 +233,7 @@ def get_probabilities_from_counts(counts, index_qubits, shots, pseudocounts, N):
         index_and_ancillary_joint_p[index_state] = {'0': 0.0, '1': 0.0}
 
     # Process counts
-    smoothed_total_counts = shots + pseudocounts * N
+    smoothed_total_counts = shots + pseudocounts * 2 * N
     for measured_state, state_counts in counts.items():
         index_state = measured_state[0: -1]
         index_dec_state = int(index_state, 2)
