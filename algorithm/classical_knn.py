@@ -1,3 +1,4 @@
+import json
 import numpy as np
 import os
 import sys
@@ -51,6 +52,9 @@ def classical_knn(training_df, target_df, k, original_training_df, save_results_
     normalized_knn_filename = None
     if save_results_to_file:
         save_cknn_log(cl_knn_output_dir, 'knn_log', verb_to_print, k, nearest_neighbors, training_instances)
+
+        with open(os.path.join(cl_knn_output_dir, 'nearest_neighbors_indices.json'), 'w') as json_file:
+            json.dump(nearest_neighbors[1][0].tolist(), json_file, ensure_ascii=False)
 
         knn_filename = os.path.join(cl_knn_output_dir, 'nearest_neighbors.csv')
         nearest_neighbors_df.to_csv(knn_filename, index=False)

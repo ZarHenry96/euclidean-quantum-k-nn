@@ -5,26 +5,30 @@ import sys
 from qiskit import Aer, IBMQ
 
 
+def save_data_to_json_file(res_dir, filename, data):
+    with open(os.path.join(res_dir, f'{filename}.json'), 'w') as json_file:
+        json.dump(data, json_file, ensure_ascii=False, indent=4)
+
+
 def save_exp_config(res_dir, filename, training_data_file, target_instance_file, k, exec_type, encoding,
                     backend_name, job_name, shots, pseudocounts, sorting_dist_estimates, verbose, save_circuit_plot):
-    with open(os.path.join(res_dir, f'{filename}.json'), 'w') as json_config:
-        config = {
-            'training_data': training_data_file,
-            'target_data': target_instance_file,
-            'k': k,
-            'exec_type': exec_type,
-            'encoding': encoding,
-            'backend_name': backend_name,
-            'job_name': job_name,
-            'shots': shots,
-            'pseudocounts': pseudocounts,
-            'sorting_dist_estimates': sorting_dist_estimates,
-            'res_dir': res_dir,
-            'verbose': verbose,
-            'store_results': True,
-            'save_circuit_plot': save_circuit_plot
-        }
-        json.dump(config, json_config, ensure_ascii=False, indent=4)
+    config = {
+        'training_data': training_data_file,
+        'target_data': target_instance_file,
+        'k': k,
+        'exec_type': exec_type,
+        'encoding': encoding,
+        'backend_name': backend_name,
+        'job_name': job_name,
+        'shots': shots,
+        'pseudocounts': pseudocounts,
+        'sorting_dist_estimates': sorting_dist_estimates,
+        'res_dir': res_dir,
+        'verbose': verbose,
+        'store_results': True,
+        'save_circuit_plot': save_circuit_plot
+    }
+    save_data_to_json_file(res_dir, filename, config)
 
 
 def select_backend(exec_type, backend_name):
@@ -51,7 +55,7 @@ def save_data_to_txt_file(res_dir, filename, data, list_on_rows=False):
 
 
 def print_qknn_results(p0, p1, index_qubits, index_and_ancillary_joint_p, euclidean_distances, sorting_dist_estimates,
-                       sorted_indices_lists, k, normalized_nearest_neighbors_dfs, file=sys.stdout):
+                       sorted_indices_dict, k, normalized_nearest_neighbors_dfs, file=sys.stdout):
     if file == sys.stdout:
         print()
     print('P(ancillary_qubit_state):', file=file)
@@ -77,11 +81,11 @@ def print_qknn_results(p0, p1, index_qubits, index_and_ancillary_joint_p, euclid
               .format(distances['zero'], distances['one'], distances['avg'], distances['diff']), file=file)
 
     print(file=file)
-    for sorting_dist_estimate, sorted_indices, normalized_nearest_neighbors_df in \
-            zip(sorting_dist_estimates, sorted_indices_lists, normalized_nearest_neighbors_dfs):
+    for sorting_dist_estimate, normalized_nearest_neighbors_df in \
+            zip(sorting_dist_estimates, normalized_nearest_neighbors_dfs):
         print(f"\nInstances sorted according to the '{sorting_dist_estimate}' distance estimate  (w/o nonexistent "
               f"index states):", file=file)
-        for i, index_decimal_state in enumerate(sorted_indices):
+        for i, index_decimal_state in enumerate(sorted_indices_dict[sorting_dist_estimate]):
             distance_value = euclidean_distances[index_decimal_state][sorting_dist_estimate]
             if i == k:
                 print('\t' + '-' * 34, file=file)
@@ -95,10 +99,10 @@ def print_qknn_results(p0, p1, index_qubits, index_and_ancillary_joint_p, euclid
 
 
 def save_qknn_log(res_dir, filename, p0, p1, index_qubits, index_and_ancillary_joint_p, euclidean_distances,
-                  sorting_dist_estimates, sorted_indices_lists, k, normalized_nearest_neighbors_dfs):
+                  sorting_dist_estimates, sorted_indices_dict, k, normalized_nearest_neighbors_dfs):
     with open(os.path.join(res_dir, f'{filename}.txt'), 'w') as log_file:
         print_qknn_results(p0, p1, index_qubits, index_and_ancillary_joint_p, euclidean_distances,
-                           sorting_dist_estimates, sorted_indices_lists, k, normalized_nearest_neighbors_dfs,
+                           sorting_dist_estimates, sorted_indices_dict, k, normalized_nearest_neighbors_dfs,
                            file=log_file)
 
 

@@ -11,8 +11,8 @@ from qiskit import ClassicalRegister, QuantumRegister, QuantumCircuit, execute
 from qiskit.tools.monitor import job_monitor
 
 from algorithm.classical_knn import classical_knn
-from algorithm.utils import save_exp_config, select_backend, save_data_to_txt_file, print_qknn_results, save_qknn_log, \
-     save_probabilities_and_distances
+from algorithm.utils import save_exp_config, select_backend, save_data_to_txt_file, save_data_to_json_file, \
+    print_qknn_results, save_qknn_log, save_probabilities_and_distances
 
 
 def load_and_normalize_data(training_data_file, target_instance_file, res_input_dir, verbose=True, store=True):
@@ -378,7 +378,7 @@ def run_qknn(training_data_file, target_instance_file, k, exec_type, encoding, b
             print('\nResults\nCircuit output counts (w/o Laplace smoothing): {}'.format(sorted_counts))
             print('\n[Shots = {}, Pseudocounts (per index state) = {}]'.format(shots, pseudocounts))
         if store_results:
-            save_data_to_txt_file(res_output_dir, 'qknn_counts', counts)
+            save_data_to_json_file(res_output_dir, 'qknn_counts', counts)
 
         # Process counts
         p0, p1, index_and_ancillary_joint_p = \
@@ -393,26 +393,28 @@ def run_qknn(training_data_file, target_instance_file, k, exec_type, encoding, b
         [], [], [None for _ in range(len(sorting_dist_estimates))]
 
     # Get the k nearest neighbors based on the specified distance estimates
-    sorted_indices_lists = []
+    sorted_indices_dict = {}
     for sorting_dist_estimate in sorting_dist_estimates:
         sorted_indices = [
             index for index, _ in sorted(euclidean_distances.items(), key=lambda item: item[1][sorting_dist_estimate])
         ]
         nearest_neighbors_dfs.append(original_training_df.iloc[sorted_indices[0: k], :].reset_index(drop=True))
         normalized_nearest_neighbors_dfs.append(training_df.iloc[sorted_indices[0: k], :].reset_index(drop=True))
-        sorted_indices_lists.append(sorted_indices)
+        sorted_indices_dict[sorting_dist_estimate] = sorted_indices
 
     # Display and store the results (if needed)
     if verbose:
         print_qknn_results(p0, p1, index_qubits, index_and_ancillary_joint_p, euclidean_distances,
-                           sorting_dist_estimates, sorted_indices_lists, k, normalized_nearest_neighbors_dfs)
+                           sorting_dist_estimates, sorted_indices_dict, k, normalized_nearest_neighbors_dfs)
     if store_results:
         save_qknn_log(res_output_dir, 'qknn_log', p0, p1, index_qubits, index_and_ancillary_joint_p,
-                      euclidean_distances, sorting_dist_estimates, sorted_indices_lists, k,
+                      euclidean_distances, sorting_dist_estimates, sorted_indices_dict, k,
                       normalized_nearest_neighbors_dfs)
 
         save_probabilities_and_distances(res_output_dir, 'qknn_probabilities_and_distances',
                                          index_and_ancillary_joint_p, euclidean_distances)
+
+        save_data_to_json_file(res_output_dir, 'nearest_neighbors_indices', sorted_indices_dict)
 
         for i, sorting_dist_estimate in enumerate(sorting_dist_estimates):
             nearest_neighbors_output_file = os.path.join(
