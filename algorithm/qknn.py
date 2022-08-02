@@ -288,7 +288,7 @@ def extract_euclidean_distances(index_and_ancillary_joint_p, N, index_qubits, en
 
 
 def run_qknn(training_data_file, target_instance_file, k, exec_type, encoding, backend_name, job_name, shots,
-             pseudocounts, sorting_dist_estimate, res_dir, verbose=True, store_results=True, save_circuit_plot=True):
+             pseudocounts, sorting_dist_estimates, res_dir, verbose=True, store_results=True, save_circuit_plot=True):
     # Prepare results directories
     res_input_dir = os.path.join(res_dir, 'input')
     res_output_dir = os.path.join(res_dir, 'output')
@@ -299,7 +299,7 @@ def run_qknn(training_data_file, target_instance_file, k, exec_type, encoding, b
 
         # Save the experiment configuration
         save_exp_config(res_dir, 'exp_config', training_data_file, target_instance_file, k, exec_type, encoding,
-                        backend_name, job_name, shots, pseudocounts, sorting_dist_estimate, verbose,
+                        backend_name, job_name, shots, pseudocounts, sorting_dist_estimates, verbose,
                         save_circuit_plot)
 
     # Load and normalize the input (training and target) data
@@ -388,33 +388,49 @@ def run_qknn(training_data_file, target_instance_file, k, exec_type, encoding, b
     euclidean_distances = extract_euclidean_distances(index_and_ancillary_joint_p, N, index_qubits, encoding,
                                                       target_norm**2)
 
-    # Get the k nearest neighbors based on the specified distance estimate
-    sorted_indices = [
-        index
-        for index, _ in sorted(euclidean_distances.items(), key=lambda item: item[1][sorting_dist_estimate])
-    ]
-    nearest_neighbors_df = original_training_df.iloc[sorted_indices[0: k], :]
-    normalized_nearest_neighbors_df = training_df.iloc[sorted_indices[0: k], :]
+    # Initialize the output data structures
+    nearest_neighbors_dfs, normalized_nearest_neighbors_dfs, normalized_nearest_neighbors_output_files = \
+        [], [], [None for _ in range(len(sorting_dist_estimates))]
+
+    # Get the k nearest neighbors based on the specified distance estimates
+    sorted_indices_lists = []
+    for sorting_dist_estimate in sorting_dist_estimates:
+        sorted_indices = [
+            index for index, _ in sorted(euclidean_distances.items(), key=lambda item: item[1][sorting_dist_estimate])
+        ]
+        nearest_neighbors_dfs.append(original_training_df.iloc[sorted_indices[0: k], :].reset_index(drop=True))
+        normalized_nearest_neighbors_dfs.append(training_df.iloc[sorted_indices[0: k], :].reset_index(drop=True))
+        sorted_indices_lists.append(sorted_indices)
 
     # Display and store the results (if needed)
-    normalized_nearest_neighbors_output_file = None
     if verbose:
         print_qknn_results(p0, p1, index_qubits, index_and_ancillary_joint_p, euclidean_distances,
-                           sorting_dist_estimate, sorted_indices, k, normalized_nearest_neighbors_df)
+                           sorting_dist_estimates, sorted_indices_lists, k, normalized_nearest_neighbors_dfs)
     if store_results:
         save_qknn_log(res_output_dir, 'qknn_log', p0, p1, index_qubits, index_and_ancillary_joint_p,
-                      euclidean_distances, sorting_dist_estimate, sorted_indices, k, normalized_nearest_neighbors_df)
+                      euclidean_distances, sorting_dist_estimates, sorted_indices_lists, k,
+                      normalized_nearest_neighbors_dfs)
 
         save_probabilities_and_distances(res_output_dir, 'qknn_probabilities_and_distances',
                                          index_and_ancillary_joint_p, euclidean_distances)
 
-        nearest_neighbors_output_file = os.path.join(res_output_dir, 'nearest_neighbors.csv')
-        nearest_neighbors_df.to_csv(nearest_neighbors_output_file, index=False)
+        for i, sorting_dist_estimate in enumerate(sorting_dist_estimates):
+            nearest_neighbors_output_file = os.path.join(
+                res_output_dir,
+                'nearest_neighbors{}.csv'.format(
+                    f'_{sorting_dist_estimate}' if len(sorting_dist_estimates) > 1 else ''
+                )
+            )
+            nearest_neighbors_dfs[i].to_csv(nearest_neighbors_output_file, index=False)
 
-        normalized_nearest_neighbors_output_file = \
-            os.path.join(res_output_dir, 'normalized_nearest_neighbors.csv')
-        normalized_nearest_neighbors_df.to_csv(normalized_nearest_neighbors_output_file, index=False)
+            normalized_nearest_neighbors_output_files[i] = \
+                os.path.join(
+                    res_output_dir,
+                    'normalized_nearest_neighbors{}.csv'.format(
+                        f'_{sorting_dist_estimate}' if len(sorting_dist_estimates) > 1 else ''
+                    )
+                )
+            normalized_nearest_neighbors_dfs[i].to_csv(normalized_nearest_neighbors_output_files[i], index=False)
 
-    normalized_nearest_neighbors_df.reset_index(drop=True, inplace=True)
-    return normalized_nearest_neighbors_df, target_df, \
-           normalized_nearest_neighbors_output_file, normalized_data_files[1]
+    return normalized_nearest_neighbors_dfs, target_df, \
+           normalized_nearest_neighbors_output_files, normalized_data_files[1]

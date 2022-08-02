@@ -6,7 +6,7 @@ from qiskit import Aer, IBMQ
 
 
 def save_exp_config(res_dir, filename, training_data_file, target_instance_file, k, exec_type, encoding,
-                    backend_name, job_name, shots, pseudocounts, sorting_dist_estimate, verbose, save_circuit_plot):
+                    backend_name, job_name, shots, pseudocounts, sorting_dist_estimates, verbose, save_circuit_plot):
     with open(os.path.join(res_dir, f'{filename}.json'), 'w') as json_config:
         config = {
             'training_data': training_data_file,
@@ -18,7 +18,7 @@ def save_exp_config(res_dir, filename, training_data_file, target_instance_file,
             'job_name': job_name,
             'shots': shots,
             'pseudocounts': pseudocounts,
-            'sorting_dist_estimate': sorting_dist_estimate,
+            'sorting_dist_estimates': sorting_dist_estimates,
             'res_dir': res_dir,
             'verbose': verbose,
             'store_results': True,
@@ -50,8 +50,8 @@ def save_data_to_txt_file(res_dir, filename, data, list_on_rows=False):
             txt_file.write(f'{data}')
 
 
-def print_qknn_results(p0, p1, index_qubits, index_and_ancillary_joint_p, euclidean_distances, sorting_dist_estimate,
-                       sorted_indices, k, normalized_nearest_neighbors_df, file=sys.stdout):
+def print_qknn_results(p0, p1, index_qubits, index_and_ancillary_joint_p, euclidean_distances, sorting_dist_estimates,
+                       sorted_indices_lists, k, normalized_nearest_neighbors_dfs, file=sys.stdout):
     if file == sys.stdout:
         print()
     print('P(ancillary_qubit_state):', file=file)
@@ -76,24 +76,30 @@ def print_qknn_results(p0, p1, index_qubits, index_and_ancillary_joint_p, euclid
               "    'avg' estimate = {:.10f}    'diff' estimate = {:.10f}"
               .format(distances['zero'], distances['one'], distances['avg'], distances['diff']), file=file)
 
-    print(f"\nInstances sorted according to the '{sorting_dist_estimate}' distance estimate  (w/o nonexistent index"
-          " states):", file=file)
-    for i, index_decimal_state in enumerate(sorted_indices):
-        distance_value = euclidean_distances[index_decimal_state][sorting_dist_estimate]
-        if i == k:
-            print('\t' + '-' * 34, file=file)
-        print(('\tindex state {:'+index_decimal_max_chars+'d}: {:.10f}')
-              .format(index_decimal_state, distance_value), file=file)
+    print(file=file)
+    for sorting_dist_estimate, sorted_indices, normalized_nearest_neighbors_df in \
+            zip(sorting_dist_estimates, sorted_indices_lists, normalized_nearest_neighbors_dfs):
+        print(f"\nInstances sorted according to the '{sorting_dist_estimate}' distance estimate  (w/o nonexistent "
+              f"index states):", file=file)
+        for i, index_decimal_state in enumerate(sorted_indices):
+            distance_value = euclidean_distances[index_decimal_state][sorting_dist_estimate]
+            if i == k:
+                print('\t' + '-' * 34, file=file)
+            print(('\tindex state {:'+index_decimal_max_chars+'d}: {:.10f}')
+                  .format(index_decimal_state, distance_value), file=file)
 
-    print(f'\nThe normalized {k} nearest neighbors for the target instance provided are:', file=file)
-    print(normalized_nearest_neighbors_df, file=file)
+        print(f"\nThe normalized {k} nearest neighbors for the target instance provided (according to the "
+              f"'{sorting_dist_estimate}' distance estimate) are:", file=file)
+        print(normalized_nearest_neighbors_df, file=file)
+        print(file=file)
 
 
 def save_qknn_log(res_dir, filename, p0, p1, index_qubits, index_and_ancillary_joint_p, euclidean_distances,
-                  sorting_dist_estimate, sorted_indices, k, normalized_nearest_neighbors_df):
+                  sorting_dist_estimates, sorted_indices_lists, k, normalized_nearest_neighbors_dfs):
     with open(os.path.join(res_dir, f'{filename}.txt'), 'w') as log_file:
         print_qknn_results(p0, p1, index_qubits, index_and_ancillary_joint_p, euclidean_distances,
-                           sorting_dist_estimate, sorted_indices, k, normalized_nearest_neighbors_df, file=log_file)
+                           sorting_dist_estimates, sorted_indices_lists, k, normalized_nearest_neighbors_dfs,
+                           file=log_file)
 
 
 def save_probabilities_and_distances(res_dir, filename, index_and_ancillary_joint_p, euclidean_distances):

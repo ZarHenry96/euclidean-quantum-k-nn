@@ -31,9 +31,9 @@ if __name__ == '__main__':
                         help='number of shots (for simulations and quantum executions).')
     parser.add_argument('--pseudocounts', metavar='pseudocounts', type=int, nargs='?', default=0,
                         help='pseudocounts (for each index value) for Laplace smoothing.')
-    parser.add_argument('--sorting-dist-estimate', metavar='sorting_dist_estimate', type=str, nargs='?', default='avg',
-                        help='distance estimate used for k nearest neighbors extraction, allowed values: zero, one, '
-                             'avg, diff.')
+    parser.add_argument('--sorting-dist-estimates', metavar='sorting_dist_estimates', type=str, nargs='+',
+                        default=['avg'], help='list of distance estimates used for k nearest neighbors extraction, '
+                        'allowed values: zero, one, avg, diff.')
     parser.add_argument('--res-dir', metavar='res_dir', type=str, nargs='?', default=None,
                         help='directory where to store the results.')
     parser.add_argument('--not-verbose', dest='not_verbose', action='store_const', const=True, default=False,
@@ -65,10 +65,11 @@ if __name__ == '__main__':
 
     job_name = args.job_name if args.job_name is not None else f'qknn_{exec_type}'
 
-    sorting_dist_estimate = args.sorting_dist_estimate
-    if sorting_dist_estimate not in ['zero', 'one', 'avg', 'diff']:
-        print(f"Unknown sorting dist. estimate '{sorting_dist_estimate}'", file=sys.stderr)
-        exit(-1)
+    sorting_dist_estimates = args.sorting_dist_estimates
+    for sorting_dist_estimate in sorting_dist_estimates:
+        if sorting_dist_estimate not in ['zero', 'one', 'avg', 'diff']:
+            print(f"Unknown sorting dist. estimate '{sorting_dist_estimate}'", file=sys.stderr)
+            exit(-1)
 
     root_res_dir = args.res_dir if args.res_dir is not None \
         else os.path.join('./', os.path.dirname(sys.argv[0]), 'results')
@@ -76,5 +77,5 @@ if __name__ == '__main__':
                            datetime.now().strftime('%d-%m-%Y_%H-%M-%S'))
 
     run_qknn(args.training_data_file, args.target_instance_file, args.k, exec_type, encoding, backend_name,
-             job_name, args.shots, args.pseudocounts, sorting_dist_estimate, res_dir, not args.not_verbose,
+             job_name, args.shots, args.pseudocounts, sorting_dist_estimates, res_dir, not args.not_verbose,
              not args.not_store, not args.not_save_circuit_plot)
