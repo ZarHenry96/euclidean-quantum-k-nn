@@ -6,7 +6,7 @@ from qiskit import Aer, IBMQ
 
 
 def save_exp_config(res_dir, filename, training_data_file, target_instance_file, k, exec_type, encoding,
-                    backend_name, job_name, shots, sorting_dist_estimate, verbose, save_circuit_plot):
+                    backend_name, job_name, shots, pseudocounts, sorting_dist_estimate, verbose, save_circuit_plot):
     with open(os.path.join(res_dir, f'{filename}.json'), 'w') as json_config:
         config = {
             'training_data': training_data_file,
@@ -17,6 +17,7 @@ def save_exp_config(res_dir, filename, training_data_file, target_instance_file,
             'backend_name': backend_name,
             'job_name': job_name,
             'shots': shots,
+            'pseudocounts': pseudocounts,
             'sorting_dist_estimate': sorting_dist_estimate,
             'res_dir': res_dir,
             'verbose': verbose,
@@ -64,15 +65,16 @@ def print_qknn_results(p0, p1, index_qubits, index_and_ancillary_joint_p, euclid
         print(('\tindex state {:'+index_decimal_max_chars+'d} (binary: {})')
               .format(index_decimal_state, index_binary_state), file=file)
         print(('\t\tP({:'+index_decimal_max_chars+'d},0) = {:.10f}    P({:'+index_decimal_max_chars+'d},1) = {:.10f}')
-              .format(index_decimal_state, joint_p["0"], index_decimal_state, joint_p["1"]), file=file)
+              .format(index_decimal_state, joint_p['0'], index_decimal_state, joint_p['1']), file=file)
 
     print('\nEuclidean distances (w/o nonexistent index states):', file=file)
     for index_decimal_state, distances in euclidean_distances.items():
         index_binary_state = ('{0:0' + str(index_qubits) + 'b}').format(index_decimal_state)
         print(('\tindex state {:'+index_decimal_max_chars+'d} (binary: {})')
               .format(index_decimal_state, index_binary_state), file=file)
-        print("\t\t'zero' estimate = {:.10f}    'one' estimate = {:.10f}    'avg' estimate = {:.10f}"
-              .format(distances["zero"], distances["one"], distances["avg"]), file=file)
+        print("\t\t'zero' estimate = {:.10f}    'one' estimate = {:.10f}"
+              "    'avg' estimate = {:.10f}    'diff' estimate = {:.10f}"
+              .format(distances['zero'], distances['one'], distances['avg'], distances['diff']), file=file)
 
     print(f"\nInstances sorted according to the '{sorting_dist_estimate}' distance estimate  (w/o nonexistent index"
           " states):", file=file)
@@ -97,14 +99,16 @@ def save_qknn_log(res_dir, filename, p0, p1, index_qubits, index_and_ancillary_j
 def save_probabilities_and_distances(res_dir, filename, index_and_ancillary_joint_p, euclidean_distances):
     with open(os.path.join(res_dir, f'{filename}.csv'), 'w') as csv_file:
         csv_file.write(
-            'index,binary_index_state,P(index;0),P(index;1),zero_dist_estimate,one_dist_estimate,avg_dist_estimate\n'
+            'index,binary_index_state,P(index;0),P(index;1),'
+            'zero_dist_estimate,one_dist_estimate,avg_dist_estimate,diff_dist_estimate\n'
         )
         for index_binary_state, joint_p in index_and_ancillary_joint_p.items():
-            index_decimal = int(index_binary_state, 2)
-            distance_estimated = index_decimal in euclidean_distances
-            csv_file.write('{},{},{},{},{},{},{}\n'.format(
-                index_decimal, index_binary_state, joint_p['0'], joint_p['1'],
-                euclidean_distances[index_decimal]['zero'] if distance_estimated else None,
-                euclidean_distances[index_decimal]['one'] if distance_estimated else None,
-                euclidean_distances[index_decimal]['avg'] if distance_estimated else None
+            index_decimal_state = int(index_binary_state, 2)
+            distance_estimated = index_decimal_state in euclidean_distances
+            csv_file.write('{},{},{},{},{},{},{},{}\n'.format(
+                index_decimal_state, index_binary_state, joint_p['0'], joint_p['1'],
+                euclidean_distances[index_decimal_state]['zero'] if distance_estimated else None,
+                euclidean_distances[index_decimal_state]['one'] if distance_estimated else None,
+                euclidean_distances[index_decimal_state]['avg'] if distance_estimated else None,
+                euclidean_distances[index_decimal_state]['diff'] if distance_estimated else None
             ))

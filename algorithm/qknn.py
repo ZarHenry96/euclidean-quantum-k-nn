@@ -204,43 +204,50 @@ def build_qknn_circuit(training_df, target_df, N, d, encoding, exec_type):
 def get_probabilities_from_statevector(statevector, qubits_num, index_qubits):
     # Prepare the data structures
     p0, p1, index_and_ancillary_joint_p = 0.0, 0.0, {}
-    for i in range(0, (2 ** index_qubits)):
-        binary_value = ('{0:0' + str(index_qubits) + 'b}').format(i)
-        index_and_ancillary_joint_p[binary_value] = {'0': 0.0, '1': 0.0}
+    for j in range(0, (2 ** index_qubits)):
+        index_state = ('{0:0' + str(index_qubits) + 'b}').format(j)
+        index_and_ancillary_joint_p[index_state] = {'0': 0.0, '1': 0.0}
 
     # Process the statevector, computing the probabilities of interest
-    for state, state_amplitude in enumerate(statevector):
-        if state % 2 == 0:
-            p0 += (np.abs(state_amplitude) ** 2)
-        else:
-            p1 += (np.abs(state_amplitude) ** 2)
+    for circuit_dec_state, state_amplitude in enumerate(statevector):
+        state_probability = np.abs(state_amplitude) ** 2
 
-        bin_state = ('{0:0' + str(qubits_num) + 'b}').format(state)
-        index_state = bin_state[qubits_num - (index_qubits + 2):-2]
-        ancillary_state = bin_state[qubits_num - 1]
-        index_and_ancillary_joint_p[index_state][ancillary_state] += (np.abs(state_amplitude) ** 2)
+        if circuit_dec_state % 2 == 0:
+            p0 += state_probability
+        else:
+            p1 += state_probability
+
+        circuit_state = ('{0:0' + str(qubits_num) + 'b}').format(circuit_dec_state)
+        index_state = circuit_state[qubits_num - (index_qubits + 2):-2]
+        ancillary_state = circuit_state[qubits_num - 1]
+        index_and_ancillary_joint_p[index_state][ancillary_state] += state_probability
 
     return p0, p1, index_and_ancillary_joint_p
 
 
-def get_probabilities_from_counts(counts, index_qubits, shots):
+def get_probabilities_from_counts(counts, index_qubits, shots, pseudocounts, N):
     # Prepare data structures
     p0, p1, index_and_ancillary_joint_p = 0.0, 0.0, {}
-    for i in range(0, (2 ** index_qubits)):
-        binary_value = ('{0:0' + str(index_qubits) + 'b}').format(i)
-        index_and_ancillary_joint_p[binary_value] = {'0': 0.0, '1': 0.0}
+    for j in range(0, (2 ** index_qubits)):
+        index_state = ('{0:0' + str(index_qubits) + 'b}').format(j)
+        index_and_ancillary_joint_p[index_state] = {'0': 0.0, '1': 0.0}
 
     # Process counts
-    for state, state_counts in counts.items():
-        index_state = state[0: -1]
-        ancillary_state = state[-1]
+    smoothed_total_counts = shots + pseudocounts * N
+    for measured_state, state_counts in counts.items():
+        index_state = measured_state[0: -1]
+        index_dec_state = int(index_state, 2)
+        ancillary_state = measured_state[-1]
+
+        smoothed_state_counts = state_counts + (pseudocounts if index_dec_state < N else 0)
+        smoothed_state_probability = smoothed_state_counts / smoothed_total_counts
 
         if ancillary_state == '0':
-            p0 += (state_counts / float(shots))
+            p0 += smoothed_state_probability
         else:
-            p1 += (state_counts / float(shots))
+            p1 += smoothed_state_probability
 
-        index_and_ancillary_joint_p[index_state][ancillary_state] += (state_counts / float(shots))
+        index_and_ancillary_joint_p[index_state][ancillary_state] += smoothed_state_probability
 
     return p0, p1, index_and_ancillary_joint_p
 
@@ -258,26 +265,30 @@ def extract_euclidean_distances(index_and_ancillary_joint_p, N, index_qubits, en
     euclidean_distances = {}
 
     for j in range(0, N):
-        index_binary_value = ('{0:0' + str(index_qubits) + 'b}').format(j)
+        index_state = ('{0:0' + str(index_qubits) + 'b}').format(j)
         euclidean_distances[j] = {}
 
-        joint_j_0_p = index_and_ancillary_joint_p[index_binary_value]['0']
+        joint_j_0_p = index_and_ancillary_joint_p[index_state]['0']
         scalar_prod_0 = 2 * N * joint_j_0_p - 1
         sqrt_arg_0 = get_sqrt_argument_from_scalar_product(scalar_prod_0, squared_target_norm, encoding)
         euclidean_distances[j]['zero'] = math.sqrt(sqrt_arg_0)
 
-        joint_j_1_p = index_and_ancillary_joint_p[index_binary_value]['1']
-        scalar_prod_1 = 1 - 2*N * joint_j_1_p
+        joint_j_1_p = index_and_ancillary_joint_p[index_state]['1']
+        scalar_prod_1 = 1 - 2 * N * joint_j_1_p
         sqrt_arg_1 = get_sqrt_argument_from_scalar_product(scalar_prod_1, squared_target_norm, encoding)
         euclidean_distances[j]['one'] = math.sqrt(sqrt_arg_1)
 
         euclidean_distances[j]['avg'] = (euclidean_distances[j]['zero'] + euclidean_distances[j]['one']) / 2
 
+        scalar_prod_diff = N * (joint_j_0_p - joint_j_1_p)
+        sqrt_arg_diff = get_sqrt_argument_from_scalar_product(scalar_prod_diff, squared_target_norm, encoding)
+        euclidean_distances[j]['diff'] = math.sqrt(sqrt_arg_diff)
+
     return euclidean_distances
 
 
 def run_qknn(training_data_file, target_instance_file, k, exec_type, encoding, backend_name, job_name, shots,
-             sorting_dist_estimate, res_dir, verbose=True, store_results=True, save_circuit_plot=True):
+             pseudocounts, sorting_dist_estimate, res_dir, verbose=True, store_results=True, save_circuit_plot=True):
     # Prepare results directories
     res_input_dir = os.path.join(res_dir, 'input')
     res_output_dir = os.path.join(res_dir, 'output')
@@ -288,7 +299,8 @@ def run_qknn(training_data_file, target_instance_file, k, exec_type, encoding, b
 
         # Save the experiment configuration
         save_exp_config(res_dir, 'exp_config', training_data_file, target_instance_file, k, exec_type, encoding,
-                        backend_name, job_name, shots, sorting_dist_estimate, verbose, save_circuit_plot)
+                        backend_name, job_name, shots, pseudocounts, sorting_dist_estimate, verbose,
+                        save_circuit_plot)
 
     # Load and normalize the input (training and target) data
     training_df, target_df, normalized_data_files = \
@@ -363,12 +375,14 @@ def run_qknn(training_data_file, target_instance_file, k, exec_type, encoding, b
 
         # Show and save the counts (if needed)
         if verbose:
-            print('\nResults\nTotal output counts: {}'.format(sorted_counts))
+            print('\nResults\nCircuit output counts (w/o Laplace smoothing): {}'.format(sorted_counts))
+            print('\n[Shots = {}, Pseudocounts (per index state) = {}]'.format(shots, pseudocounts))
         if store_results:
             save_data_to_txt_file(res_output_dir, 'qknn_counts', counts)
 
         # Process counts
-        p0, p1, index_and_ancillary_joint_p = get_probabilities_from_counts(counts, index_qubits, shots)
+        p0, p1, index_and_ancillary_joint_p = \
+            get_probabilities_from_counts(counts, index_qubits, shots, pseudocounts, N)
 
     # Extract the distances from the probability values
     euclidean_distances = extract_euclidean_distances(index_and_ancillary_joint_p, N, index_qubits, encoding,
