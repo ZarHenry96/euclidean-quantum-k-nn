@@ -14,7 +14,7 @@ def save_data_to_json_file(res_dir, filename, data):
 
 
 def save_exp_config(res_dir, filename, training_data_file, target_instance_file, k, exec_type, encoding,
-                    backend_name, job_name, shots, pseudocounts, sorting_dist_estimates, verbose, save_circuit_plot):
+                    backend_name, job_name, shots, pseudocounts, dist_estimates, verbose, save_circuit_plot):
     config = {
         'training_data': training_data_file,
         'target_data': target_instance_file,
@@ -25,7 +25,7 @@ def save_exp_config(res_dir, filename, training_data_file, target_instance_file,
         'job_name': job_name,
         'shots': shots,
         'pseudocounts': pseudocounts,
-        'sorting_dist_estimates': sorting_dist_estimates,
+        'sorting_dist_estimates': dist_estimates,
         'res_dir': res_dir,
         'verbose': verbose,
         'store_results': True,
@@ -61,8 +61,8 @@ def save_data_to_txt_file(res_dir, filename, data, list_on_rows=False):
     return filepath
 
 
-def print_qknn_results(p0, p1, index_qubits_num, index_and_ancillary_joint_p, euclidean_distances,
-                       sorting_dist_estimates, sorted_indices_lists, k, normalized_knn_dfs, file=sys.stdout):
+def print_qknn_results(p0, p1, index_qubits_num, index_and_ancillary_joint_p, euclidean_distances, dist_estimates,
+                       sorted_indices_lists, k, normalized_knn_dfs, file=sys.stdout):
     if file == sys.stdout:
         print()
     print('P(ancillary_qubit_state):', file=file)
@@ -79,37 +79,37 @@ def print_qknn_results(p0, p1, index_qubits_num, index_and_ancillary_joint_p, eu
               .format(index_dec_state, joint_p['0'], index_dec_state, joint_p['1']), file=file)
 
     print('\nEuclidean distances (w/o nonexistent index states):', file=file)
-    for index_dec_state, distances in euclidean_distances.items():
+    for index_dec_state, estimated_distances in euclidean_distances.items():
         index_bin_state = ('{0:0' + str(index_qubits_num) + 'b}').format(index_dec_state)
         print(('\tindex state {:'+index_dec_max_chars+'d} (binary: {})')
               .format(index_dec_state, index_bin_state), file=file)
-        formatting_strings = [f"'{dist_estimate}'" + " estimate = {:.10f}" for dist_estimate in distances]
-        print('\t\t' + '    '.join(formatting_strings).format(*distances.values()), file=file)
+        formatting_strings = [f"'{dist_estimate}'" + " estimate = {:.10f}" for dist_estimate in dist_estimates]
+        print('\t\t' + '    '.join(formatting_strings).format(*estimated_distances.values()), file=file)
 
     print('\n', file=file)
-    for sorting_dist_estimate, sorted_indices, normalized_knn_df in \
-            zip(sorting_dist_estimates, sorted_indices_lists, normalized_knn_dfs):
-        print(f"Instances sorted according to the '{sorting_dist_estimate}' distance estimate  (w/o nonexistent "
+    for dist_estimate, sorted_indices, normalized_knn_df in \
+            zip(dist_estimates, sorted_indices_lists, normalized_knn_dfs):
+        print(f"Instances sorted according to the '{dist_estimate}' distance estimate  (w/o nonexistent "
               f"index states):", file=file)
         for i, index_dec_state in enumerate(sorted_indices):
-            distance_value = euclidean_distances[index_dec_state][sorting_dist_estimate]
+            estimated_distance = euclidean_distances[index_dec_state][dist_estimate]
             if i == k:
-                print('\t' + '-' * 34, file=file)
+                print('\t' + '-' * 27, file=file)
             print(('\tindex state {:'+index_dec_max_chars+'d}: {:.10f}')
-                  .format(index_dec_state, distance_value), file=file)
+                  .format(index_dec_state, estimated_distance), file=file)
 
         print(f"\nThe normalized {k} nearest neighbors for the target instance provided (according to the "
-              f"'{sorting_dist_estimate}' distance estimate) are:", file=file)
+              f"'{dist_estimate}' distance estimate) are:", file=file)
         print(normalized_knn_df, file=file)
         print('\n', file=file)
 
 
 def save_qknn_log(res_dir, filename, p0, p1, index_qubits_num, index_and_ancillary_joint_p, euclidean_distances,
-                  sorting_dist_estimates, sorted_indices_lists, k, normalized_knn_dfs):
+                  dist_estimates, sorted_indices_lists, k, normalized_knn_dfs):
     filepath = os.path.join(res_dir, f'{filename}.txt')
     with open(filepath, 'w') as log_file:
-        print_qknn_results(p0, p1, index_qubits_num, index_and_ancillary_joint_p, euclidean_distances,
-                           sorting_dist_estimates, sorted_indices_lists, k, normalized_knn_dfs, file=log_file)
+        print_qknn_results(p0, p1, index_qubits_num, index_and_ancillary_joint_p, euclidean_distances, dist_estimates,
+                           sorted_indices_lists, k, normalized_knn_dfs, file=log_file)
 
     return filepath
 

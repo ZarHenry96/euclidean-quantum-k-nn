@@ -261,14 +261,14 @@ def get_sqrt_argument_from_scalar_product(scalar_product, squared_target_norm, e
     return sqrt_arg if sqrt_arg >= 0.0 else 0.0
 
 
-def extract_euclidean_distances(index_and_ancillary_joint_p, sorting_dist_estimates, N, index_qubits_num,
-                                squared_target_norm, encoding):
+def extract_euclidean_distances(index_and_ancillary_joint_p, dist_estimates, N, index_qubits_num, squared_target_norm,
+                                encoding):
     euclidean_distances = {}
 
-    avg = 'avg' in sorting_dist_estimates
-    diff = 'diff' in sorting_dist_estimates
-    one = 'one' in sorting_dist_estimates or avg
-    zero = 'zero' in sorting_dist_estimates or avg
+    avg = 'avg' in dist_estimates
+    diff = 'diff' in dist_estimates
+    one = 'one' in dist_estimates or avg
+    zero = 'zero' in dist_estimates or avg
 
     for j in range(0, N):
         index_state = ('{0:0' + str(index_qubits_num) + 'b}').format(j)
@@ -299,7 +299,7 @@ def extract_euclidean_distances(index_and_ancillary_joint_p, sorting_dist_estima
 
 
 def run_qknn(training_data_file, target_instance_file, k, exec_type, encoding, backend_name, job_name, shots,
-             pseudocounts, sorting_dist_estimates, res_dir, verbose=True, store_results=True, save_circuit_plot=True):
+             pseudocounts, dist_estimates, res_dir, verbose=True, store_results=True, save_circuit_plot=True):
     # Prepare results directories
     res_input_dir = os.path.join(res_dir, 'input')
     res_output_dir = os.path.join(res_dir, 'output')
@@ -310,8 +310,7 @@ def run_qknn(training_data_file, target_instance_file, k, exec_type, encoding, b
 
         # Save the experiment configuration
         save_exp_config(res_dir, 'exp_config', training_data_file, target_instance_file, k, exec_type, encoding,
-                        backend_name, job_name, shots, pseudocounts, sorting_dist_estimates, verbose,
-                        save_circuit_plot)
+                        backend_name, job_name, shots, pseudocounts, dist_estimates, verbose, save_circuit_plot)
 
     # Load and normalize the input (training and target) data
     training_df, target_df, normalized_data_files = \
@@ -386,7 +385,7 @@ def run_qknn(training_data_file, target_instance_file, k, exec_type, encoding, b
 
         # Show and save the counts (if needed)
         if verbose:
-            print('\nResults\nCircuit output counts (w/o Laplace smoothing): {}'.format(sorted_counts))
+            print('\nResults\n\nCircuit output counts (w/o Laplace smoothing): {}'.format(sorted_counts))
             print('\n[Shots = {}, Pseudocounts (per index state) = {}]'.format(shots, pseudocounts))
         if store_results:
             save_data_to_json_file(res_output_dir, 'qknn_counts', sorted_counts)
@@ -396,17 +395,17 @@ def run_qknn(training_data_file, target_instance_file, k, exec_type, encoding, b
             get_probabilities_from_counts(sorted_counts, index_qubits_num, shots, pseudocounts, N)
 
     # Extract the distances from the probability values
-    euclidean_distances = extract_euclidean_distances(index_and_ancillary_joint_p, sorting_dist_estimates,
-                                                      N, index_qubits_num, target_norm**2, encoding)
+    euclidean_distances = extract_euclidean_distances(index_and_ancillary_joint_p, dist_estimates,
+                                                      N, index_qubits_num, target_norm ** 2, encoding)
 
-    # Initialize some useful data structures
+    # Initialize some useful variables
     sorted_indices_lists, knn_dfs, normalized_knn_dfs = [], [], []
     knn_indices_out_file, knn_out_files, normalized_knn_out_files = None, [], []
 
     # Get the k nearest neighbors based on the specified distance estimates
-    for sorting_dist_estimate in sorting_dist_estimates:
+    for dist_estimate in dist_estimates:
         sorted_indices = [
-            index for index, _ in sorted(euclidean_distances.items(), key=lambda item: item[1][sorting_dist_estimate])
+            index for index, _ in sorted(euclidean_distances.items(), key=lambda item: item[1][dist_estimate])
         ]
         sorted_indices_lists.append(sorted_indices)
         knn_dfs.append(original_training_df.iloc[sorted_indices[0: k], :].reset_index(drop=True))
@@ -414,21 +413,21 @@ def run_qknn(training_data_file, target_instance_file, k, exec_type, encoding, b
 
     # Display and store the results (if needed)
     if verbose:
-        print_qknn_results(p0, p1, index_qubits_num, index_and_ancillary_joint_p, euclidean_distances,
-                           sorting_dist_estimates, sorted_indices_lists, k, normalized_knn_dfs)
+        print_qknn_results(p0, p1, index_qubits_num, index_and_ancillary_joint_p, euclidean_distances, dist_estimates,
+                           sorted_indices_lists, k, normalized_knn_dfs)
     if store_results:
         save_qknn_log(res_output_dir, 'qknn_log', p0, p1, index_qubits_num, index_and_ancillary_joint_p,
-                      euclidean_distances, sorting_dist_estimates, sorted_indices_lists, k,
-                      normalized_knn_dfs)
+                      euclidean_distances, dist_estimates, sorted_indices_lists, k, normalized_knn_dfs)
 
         save_probabilities_and_distances(res_output_dir, 'qknn_probabilities_and_distances',
                                          index_and_ancillary_joint_p, euclidean_distances, N)
 
-        knn_indices_dict = {d: indices[0: k] for d, indices in zip(sorting_dist_estimates, sorted_indices_lists)}
+        knn_indices_dict = {dist_estimate: sorted_indices[0: k]
+                            for dist_estimate, sorted_indices in zip(dist_estimates, sorted_indices_lists)}
         knn_indices_out_file = save_data_to_json_file(res_output_dir, 'k_nearest_neighbors_indices', knn_indices_dict)
 
-        for i, sorting_dist_estimate in enumerate(sorting_dist_estimates):
-            dfs_out_files_suffix = f'_{sorting_dist_estimate}' if len(sorting_dist_estimates) > 1 else ''
+        for i, dist_estimate in enumerate(dist_estimates):
+            dfs_out_files_suffix = f'_{dist_estimate}' if len(dist_estimates) > 1 else ''
 
             knn_out_files.append(os.path.join(res_output_dir, 'k_nearest_neighbors{}.csv'.format(dfs_out_files_suffix)))
             knn_dfs[i].to_csv(knn_out_files[i], index=False)
