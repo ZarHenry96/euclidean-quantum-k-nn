@@ -83,7 +83,8 @@ def print_qknn_results(p0, p1, index_qubits_num, index_and_ancillary_joint_p, eu
         index_bin_state = ('{0:0' + str(index_qubits_num) + 'b}').format(index_dec_state)
         print(('\tindex state {:'+index_dec_max_chars+'d} (binary: {})')
               .format(index_dec_state, index_bin_state), file=file)
-        formatting_strings = [f"'{dist_estimate}'" + " estimate = {:.10f}" for dist_estimate in dist_estimates]
+        formatting_strings = [f"'{dist_estimate}'" + " estimate = {:.10f}"
+                              for dist_estimate in estimated_distances.keys()]
         print('\t\t' + '    '.join(formatting_strings).format(*estimated_distances.values()), file=file)
 
     print('\n', file=file)
