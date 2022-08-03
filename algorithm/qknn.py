@@ -81,11 +81,11 @@ def load_and_normalize_data(training_data_file, target_instance_file, res_input_
 
 def build_qknn_circuit(training_df, target_df, N, d, encoding, exec_type):
     # Compute the circuit size
-    cnot_swap_circuit_qubits = 2
-    index_qubits = math.ceil(math.log2(N))
-    features_qubits = math.ceil(math.log2(2 * d + (3 if encoding == 'extension' else 4)))
-    qubits_num = cnot_swap_circuit_qubits + index_qubits + features_qubits
-    c_bits_num = 1 + index_qubits
+    cnot_swap_circuit_qubits_num = 2
+    index_qubits_num = math.ceil(math.log2(N))
+    features_qubits_num = math.ceil(math.log2(2 * d + (3 if encoding == 'extension' else 4)))
+    qubits_num = cnot_swap_circuit_qubits_num + index_qubits_num + features_qubits_num
+    c_bits_num = 1 + index_qubits_num
 
     # Create a Quantum Circuit acting on the q register
     qr = QuantumRegister(qubits_num, 'q')
@@ -93,8 +93,8 @@ def build_qknn_circuit(training_df, target_df, N, d, encoding, exec_type):
     circuit = QuantumCircuit(qr, cr)
 
     # Data structures for the joint initialization of the target CNOT-SWAP qubit, the index and features registers
-    init_qubits = 1 + index_qubits + features_qubits
-    amplitudes = np.zeros(2 ** init_qubits)
+    init_qubits_num = 1 + index_qubits_num + features_qubits_num
+    amplitudes = np.zeros(2 ** init_qubits_num)
     amplitudes_base_value = math.sqrt(1 / (2 * N))
 
     # Encoding variables
@@ -111,75 +111,75 @@ def build_qknn_circuit(training_df, target_df, N, d, encoding, exec_type):
     encoded_training_set = []
     for instance_index, row in training_df.iterrows():
         training_norms.append(np.linalg.norm(row[0:d]))
-        encoded_training_set.append([])
+        # encoded_training_set.append([])
 
         # Training instance features (two times)
         for i in range(0, 2 * d):
-            index = 2 * instance_index + (2 ** (index_qubits + 1)) * i
+            index = 2 * instance_index + (2 ** (index_qubits_num + 1)) * i
             amplitudes[index] = amplitudes_base_value * multiplication_factor * row[i % d]
-            encoded_training_set[-1].append(amplitudes[index] / amplitudes_base_value)
+            # encoded_training_set[-1].append(amplitudes[index] / amplitudes_base_value)
 
         # Training instance norm
-        index = 2 * instance_index + (2 ** (index_qubits + 1)) * (2 * d)
+        index = 2 * instance_index + (2 ** (index_qubits_num + 1)) * (2 * d)
         amplitudes[index] = amplitudes_base_value * multiplication_factor * training_norms[-1]
-        encoded_training_set[-1].append(amplitudes[index] / amplitudes_base_value)
+        # encoded_training_set[-1].append(amplitudes[index] / amplitudes_base_value)
 
         # Translation feature (for translation encoding)
         if encoding == 'translation':
-            index = 2 * instance_index + (2 ** (index_qubits + 1)) * (2 * d + features_offset)
+            index = 2 * instance_index + (2 ** (index_qubits_num + 1)) * (2 * d + features_offset)
             amplitudes[index] = amplitudes_base_value * translation_feature_abs_value
-            encoded_training_set[-1].append(translation_feature_abs_value)
+            # encoded_training_set[-1].append(translation_feature_abs_value)
 
         # Zero value
-        index = 2 * instance_index + (2 ** (index_qubits + 1)) * (2 * d + features_offset + 1)
+        index = 2 * instance_index + (2 ** (index_qubits_num + 1)) * (2 * d + features_offset + 1)
         amplitudes[index] = amplitudes_base_value * 0
-        encoded_training_set[-1].append(0)
+        # encoded_training_set[-1].append(0)
 
         # Residual (for unitary norm)
-        index = 2 * instance_index + (2 ** (index_qubits + 1)) * (2 * d + features_offset + 2)
+        index = 2 * instance_index + (2 ** (index_qubits_num + 1)) * (2 * d + features_offset + 2)
         amplitudes[index] = amplitudes_base_value * math.sqrt(
             1 - (3 * multiplication_factor**2 * training_norms[-1]**2 + translation_feature_abs_value**2)
         )
-        encoded_training_set[-1].append(amplitudes[index] / amplitudes_base_value)
+        # encoded_training_set[-1].append(amplitudes[index] / amplitudes_base_value)
 
     # Compute the target instance amplitudes
     encoded_target_instances = []
     for j in range(0, N):
-        encoded_target_instances.append([])
+        # encoded_target_instances.append([])
 
         # Target instance features with sign flipped (two times)
         for i in range(0, 2 * d):
-            index = 1 + 2 * j + (2 ** (index_qubits + 1)) * i
+            index = 1 + 2 * j + (2 ** (index_qubits_num + 1)) * i
             amplitudes[index] = amplitudes_base_value * multiplication_factor * (-target_df.iloc[0, i % d])
-            encoded_training_set[-1].append(amplitudes[index] / amplitudes_base_value)
+            # encoded_target_instances[-1].append(amplitudes[index] / amplitudes_base_value)
 
         # Corresponding training instance norm
-        index = 1 + 2 * j + (2 ** (index_qubits+1)) * (2 * d)
+        index = 1 + 2 * j + (2 ** (index_qubits_num+1)) * (2 * d)
         amplitudes[index] = amplitudes_base_value * multiplication_factor * training_norms[j]
-        encoded_target_instances[-1].append(amplitudes[index] / amplitudes_base_value)
+        # encoded_target_instances[-1].append(amplitudes[index] / amplitudes_base_value)
 
         # Translation feature (for translation encoding)
         if encoding == 'translation':
-            index = 1 + 2 * j + (2 ** (index_qubits + 1)) * (2 * d + features_offset)
+            index = 1 + 2 * j + (2 ** (index_qubits_num + 1)) * (2 * d + features_offset)
             amplitudes[index] = amplitudes_base_value * (-translation_feature_abs_value)
-            encoded_target_instances[-1].append(-translation_feature_abs_value)
+            # encoded_target_instances[-1].append(-translation_feature_abs_value)
 
         # Residual (for unitary norm)
-        index = 1 + 2 * j + (2 ** (index_qubits + 1)) * (2 * d + features_offset + 1)
+        index = 1 + 2 * j + (2 ** (index_qubits_num + 1)) * (2 * d + features_offset + 1)
         amplitudes[index] = amplitudes_base_value * math.sqrt(
             1 - (2 * multiplication_factor**2 * target_norm**2 + multiplication_factor**2 * training_norms[j]**2 +
                  translation_feature_abs_value**2)
         )
-        encoded_target_instances[-1].append(amplitudes[index] / amplitudes_base_value)
+        # encoded_target_instances[-1].append(amplitudes[index] / amplitudes_base_value)
 
         # Zero value
-        index = 1 + 2 * j + (2 ** (index_qubits + 1)) * (2 * d + features_offset + 2)
+        index = 1 + 2 * j + (2 ** (index_qubits_num + 1)) * (2 * d + features_offset + 2)
         amplitudes[index] = amplitudes_base_value * 0
-        encoded_target_instances[-1].append(0)
+        # encoded_target_instances[-1].append(0)
 
     # Set all "target CNOT-SWAP qubit + index_register + features_register" amplitudes
     target_cnot_swap_qubit = 1
-    circuit.initialize(amplitudes, qr[target_cnot_swap_qubit: target_cnot_swap_qubit + init_qubits])
+    circuit.initialize(amplitudes, qr[target_cnot_swap_qubit: target_cnot_swap_qubit + init_qubits_num])
 
     # Add the CNOT-SWAP gates
     circuit.h(qr[0])
@@ -195,17 +195,17 @@ def build_qknn_circuit(training_df, target_df, N, d, encoding, exec_type):
         circuit.barrier(qr[0: qubits_num])
         # Measure the index register
         first_index_qubit = 2
-        circuit.measure(qr[first_index_qubit: first_index_qubit + index_qubits], cr[1: 1 + index_qubits])
+        circuit.measure(qr[first_index_qubit: first_index_qubit + index_qubits_num], cr[1: 1 + index_qubits_num])
 
-    return circuit, qubits_num, index_qubits, features_qubits, target_norm, \
+    return circuit, qubits_num, index_qubits_num, features_qubits_num, target_norm, \
            [encoded_training_set, encoded_target_instances]
 
 
-def get_probabilities_from_statevector(statevector, qubits_num, index_qubits):
+def get_probabilities_from_statevector(statevector, qubits_num, index_qubits_num):
     # Prepare the data structures
     p0, p1, index_and_ancillary_joint_p = 0.0, 0.0, {}
-    for j in range(0, (2 ** index_qubits)):
-        index_state = ('{0:0' + str(index_qubits) + 'b}').format(j)
+    for j in range(0, (2 ** index_qubits_num)):
+        index_state = ('{0:0' + str(index_qubits_num) + 'b}').format(j)
         index_and_ancillary_joint_p[index_state] = {'0': 0.0, '1': 0.0}
 
     # Process the statevector, computing the probabilities of interest
@@ -218,18 +218,18 @@ def get_probabilities_from_statevector(statevector, qubits_num, index_qubits):
             p1 += state_probability
 
         circuit_state = ('{0:0' + str(qubits_num) + 'b}').format(circuit_dec_state)
-        index_state = circuit_state[qubits_num - (index_qubits + 2):-2]
+        index_state = circuit_state[qubits_num - (index_qubits_num + 2):-2]
         ancillary_state = circuit_state[qubits_num - 1]
         index_and_ancillary_joint_p[index_state][ancillary_state] += state_probability
 
     return p0, p1, index_and_ancillary_joint_p
 
 
-def get_probabilities_from_counts(counts, index_qubits, shots, pseudocounts, N):
+def get_probabilities_from_counts(counts, index_qubits_num, shots, pseudocounts, N):
     # Prepare data structures
     p0, p1, index_and_ancillary_joint_p = 0.0, 0.0, {}
-    for j in range(0, (2 ** index_qubits)):
-        index_state = ('{0:0' + str(index_qubits) + 'b}').format(j)
+    for j in range(0, (2 ** index_qubits_num)):
+        index_state = ('{0:0' + str(index_qubits_num) + 'b}').format(j)
         index_and_ancillary_joint_p[index_state] = {'0': 0.0, '1': 0.0}
 
     # Process counts
@@ -261,11 +261,11 @@ def get_sqrt_argument_from_scalar_product(scalar_product, squared_target_norm, e
     return sqrt_arg if sqrt_arg >= 0.0 else 0.0
 
 
-def extract_euclidean_distances(index_and_ancillary_joint_p, N, index_qubits, encoding, squared_target_norm):
+def extract_euclidean_distances(index_and_ancillary_joint_p, N, index_qubits_num, encoding, squared_target_norm):
     euclidean_distances = {}
 
     for j in range(0, N):
-        index_state = ('{0:0' + str(index_qubits) + 'b}').format(j)
+        index_state = ('{0:0' + str(index_qubits_num) + 'b}').format(j)
         euclidean_distances[j] = {}
 
         joint_j_0_p = index_and_ancillary_joint_p[index_state]['0']
@@ -313,9 +313,9 @@ def run_qknn(training_data_file, target_instance_file, k, exec_type, encoding, b
 
     # If it is a classical execution, run the classical KNN and exit
     if exec_type == 'classical':
-        normalized_nearest_neighbors_df, normalized_knn_filename = \
+        knn_indices_out_file, knn_out_file, normalized_knn_out_file = \
             classical_knn(training_df, target_df, k, original_training_df, store_results, res_dir, verbose=verbose)
-        return normalized_nearest_neighbors_df, target_df, normalized_knn_filename, normalized_data_files[1]
+        return knn_indices_out_file, [knn_out_file], [normalized_knn_out_file]
 
     # Select the backend for the execution
     backend = select_backend(exec_type, backend_name)
@@ -325,7 +325,7 @@ def run_qknn(training_data_file, target_instance_file, k, exec_type, encoding, b
                   expectation=True, verbose=verbose)
 
     # Build the quantum circuit
-    circuit, qubits_num, index_qubits, features_qubits, target_norm, _ = \
+    circuit, qubits_num, index_qubits_num, features_qubits_num, target_norm, _ = \
         build_qknn_circuit(training_df, target_df, N, d, encoding, exec_type)
 
     # Draw, show, and save the circuit (if needed)
@@ -368,7 +368,7 @@ def run_qknn(training_data_file, target_instance_file, k, exec_type, encoding, b
 
         # Process the output statevector
         p0, p1, index_and_ancillary_joint_p = \
-            get_probabilities_from_statevector(output_statevector, qubits_num, index_qubits)
+            get_probabilities_from_statevector(output_statevector, qubits_num, index_qubits_num)
     else:
         counts = result.get_counts(circuit)
         sorted_counts = {i: counts[i] for i in sorted(counts.keys())}
@@ -382,57 +382,49 @@ def run_qknn(training_data_file, target_instance_file, k, exec_type, encoding, b
 
         # Process counts
         p0, p1, index_and_ancillary_joint_p = \
-            get_probabilities_from_counts(counts, index_qubits, shots, pseudocounts, N)
+            get_probabilities_from_counts(counts, index_qubits_num, shots, pseudocounts, N)
 
     # Extract the distances from the probability values
-    euclidean_distances = extract_euclidean_distances(index_and_ancillary_joint_p, N, index_qubits, encoding,
+    euclidean_distances = extract_euclidean_distances(index_and_ancillary_joint_p, N, index_qubits_num, encoding,
                                                       target_norm**2)
 
-    # Initialize the output data structures
-    nearest_neighbors_dfs, normalized_nearest_neighbors_dfs, normalized_nearest_neighbors_output_files = \
-        [], [], [None for _ in range(len(sorting_dist_estimates))]
+    # Initialize some useful data structures
+    sorted_indices_lists, knn_dfs, normalized_knn_dfs = [], [], []
+    knn_indices_out_file, knn_out_files, normalized_knn_out_files = None, [], []
 
     # Get the k nearest neighbors based on the specified distance estimates
-    sorted_indices_dict = {}
     for sorting_dist_estimate in sorting_dist_estimates:
         sorted_indices = [
             index for index, _ in sorted(euclidean_distances.items(), key=lambda item: item[1][sorting_dist_estimate])
         ]
-        nearest_neighbors_dfs.append(original_training_df.iloc[sorted_indices[0: k], :].reset_index(drop=True))
-        normalized_nearest_neighbors_dfs.append(training_df.iloc[sorted_indices[0: k], :].reset_index(drop=True))
-        sorted_indices_dict[sorting_dist_estimate] = sorted_indices
+        sorted_indices_lists.append(sorted_indices)
+        knn_dfs.append(original_training_df.iloc[sorted_indices[0: k], :].reset_index(drop=True))
+        normalized_knn_dfs.append(training_df.iloc[sorted_indices[0: k], :].reset_index(drop=True))
 
     # Display and store the results (if needed)
     if verbose:
-        print_qknn_results(p0, p1, index_qubits, index_and_ancillary_joint_p, euclidean_distances,
-                           sorting_dist_estimates, sorted_indices_dict, k, normalized_nearest_neighbors_dfs)
+        print_qknn_results(p0, p1, index_qubits_num, index_and_ancillary_joint_p, euclidean_distances,
+                           sorting_dist_estimates, sorted_indices_lists, k, normalized_knn_dfs)
     if store_results:
-        save_qknn_log(res_output_dir, 'qknn_log', p0, p1, index_qubits, index_and_ancillary_joint_p,
-                      euclidean_distances, sorting_dist_estimates, sorted_indices_dict, k,
-                      normalized_nearest_neighbors_dfs)
+        save_qknn_log(res_output_dir, 'qknn_log', p0, p1, index_qubits_num, index_and_ancillary_joint_p,
+                      euclidean_distances, sorting_dist_estimates, sorted_indices_lists, k,
+                      normalized_knn_dfs)
 
         save_probabilities_and_distances(res_output_dir, 'qknn_probabilities_and_distances',
                                          index_and_ancillary_joint_p, euclidean_distances)
 
-        save_data_to_json_file(res_output_dir, 'nearest_neighbors_indices', sorted_indices_dict)
+        knn_indices_dict = {d: indices[0: k] for d, indices in zip(sorting_dist_estimates, sorted_indices_lists)}
+        knn_indices_out_file = save_data_to_json_file(res_output_dir, 'k_nearest_neighbors_indices', knn_indices_dict)
 
         for i, sorting_dist_estimate in enumerate(sorting_dist_estimates):
-            nearest_neighbors_output_file = os.path.join(
-                res_output_dir,
-                'nearest_neighbors{}.csv'.format(
-                    f'_{sorting_dist_estimate}' if len(sorting_dist_estimates) > 1 else ''
-                )
-            )
-            nearest_neighbors_dfs[i].to_csv(nearest_neighbors_output_file, index=False)
+            dfs_out_files_suffix = f'_{sorting_dist_estimate}' if len(sorting_dist_estimates) > 1 else ''
 
-            normalized_nearest_neighbors_output_files[i] = \
-                os.path.join(
-                    res_output_dir,
-                    'normalized_nearest_neighbors{}.csv'.format(
-                        f'_{sorting_dist_estimate}' if len(sorting_dist_estimates) > 1 else ''
-                    )
-                )
-            normalized_nearest_neighbors_dfs[i].to_csv(normalized_nearest_neighbors_output_files[i], index=False)
+            knn_out_files.append(os.path.join(res_output_dir, 'k_nearest_neighbors{}.csv'.format(dfs_out_files_suffix)))
+            knn_dfs[i].to_csv(knn_out_files[i], index=False)
 
-    return normalized_nearest_neighbors_dfs, target_df, \
-           normalized_nearest_neighbors_output_files, normalized_data_files[1]
+            normalized_knn_out_files.append(os.path.join(
+                res_output_dir, 'normalized_k_nearest_neighbors{}.csv'.format(dfs_out_files_suffix)
+            ))
+            normalized_knn_dfs[i].to_csv(normalized_knn_out_files[i], index=False)
+
+    return knn_indices_out_file, knn_out_files, normalized_knn_out_files

@@ -39,28 +39,28 @@ def classical_knn(training_df, target_df, k, original_training_df, save_results_
     knn_model.fit(training_instances)
 
     # Determine the nearest neighbors
-    nearest_neighbors = knn_model.kneighbors(target_instance)
-    nearest_neighbors_df = original_training_df.iloc[nearest_neighbors[1][0], :]
-    normalized_nearest_neighbors_df = training_df.iloc[nearest_neighbors[1][0], :]
+    knn = knn_model.kneighbors(target_instance)
+    knn_df = original_training_df.iloc[knn[1][0], :].reset_index(drop=True)
+    normalized_knn_df = training_df.iloc[knn[1][0], :].reset_index(drop=True)
 
     # Show the results
     verb_to_print = 'expected' if expectation else 'predicted'
     if verbose:
-        print_cknn_results(verb_to_print, k, nearest_neighbors, training_instances)
+        print_cknn_results(verb_to_print, k, knn, training_instances)
 
     # Save the results (if needed)
-    normalized_knn_filename = None
+    knn_indices_out_file, knn_out_file, normalized_knn_out_file = None, None, None
     if save_results_to_file:
-        save_cknn_log(cl_knn_output_dir, 'knn_log', verb_to_print, k, nearest_neighbors, training_instances)
+        save_cknn_log(cl_knn_output_dir, 'knn_log', verb_to_print, k, knn, training_instances)
 
-        with open(os.path.join(cl_knn_output_dir, 'nearest_neighbors_indices.json'), 'w') as json_file:
-            json.dump(nearest_neighbors[1][0].tolist(), json_file, ensure_ascii=False)
+        knn_indices_out_file = os.path.join(cl_knn_output_dir, 'k_nearest_neighbors_indices.json')
+        with open(knn_indices_out_file, 'w') as json_file:
+            json.dump({'exact': knn[1][0].tolist()}, json_file, ensure_ascii=False, indent=4)
 
-        knn_filename = os.path.join(cl_knn_output_dir, 'nearest_neighbors.csv')
-        nearest_neighbors_df.to_csv(knn_filename, index=False)
+        knn_out_file = os.path.join(cl_knn_output_dir, 'k_nearest_neighbors.csv')
+        knn_df.to_csv(knn_out_file, index=False)
 
-        normalized_knn_filename = os.path.join(cl_knn_output_dir, 'normalized_nearest_neighbors.csv')
-        normalized_nearest_neighbors_df.to_csv(normalized_knn_filename, index=False)
+        normalized_knn_out_file = os.path.join(cl_knn_output_dir, 'normalized_k_nearest_neighbors.csv')
+        normalized_knn_df.to_csv(normalized_knn_out_file, index=False)
 
-    normalized_nearest_neighbors_df.reset_index(drop=True, inplace=True)
-    return normalized_nearest_neighbors_df, normalized_knn_filename
+    return knn_indices_out_file, knn_out_file, normalized_knn_out_file
