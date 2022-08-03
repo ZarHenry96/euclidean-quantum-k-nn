@@ -83,14 +83,13 @@ def print_qknn_results(p0, p1, index_qubits_num, index_and_ancillary_joint_p, eu
         index_bin_state = ('{0:0' + str(index_qubits_num) + 'b}').format(index_dec_state)
         print(('\tindex state {:'+index_dec_max_chars+'d} (binary: {})')
               .format(index_dec_state, index_bin_state), file=file)
-        print("\t\t'zero' estimate = {:.10f}    'one' estimate = {:.10f}"
-              "    'avg' estimate = {:.10f}    'diff' estimate = {:.10f}"
-              .format(distances['zero'], distances['one'], distances['avg'], distances['diff']), file=file)
+        formatting_strings = [f"'{dist_estimate}'" + " estimate = {:.10f}" for dist_estimate in distances]
+        print('\t\t' + '    '.join(formatting_strings).format(*distances.values()), file=file)
 
-    print(file=file)
+    print('\n', file=file)
     for sorting_dist_estimate, sorted_indices, normalized_knn_df in \
             zip(sorting_dist_estimates, sorted_indices_lists, normalized_knn_dfs):
-        print(f"\nInstances sorted according to the '{sorting_dist_estimate}' distance estimate  (w/o nonexistent "
+        print(f"Instances sorted according to the '{sorting_dist_estimate}' distance estimate  (w/o nonexistent "
               f"index states):", file=file)
         for i, index_dec_state in enumerate(sorted_indices):
             distance_value = euclidean_distances[index_dec_state][sorting_dist_estimate]
@@ -102,7 +101,7 @@ def print_qknn_results(p0, p1, index_qubits_num, index_and_ancillary_joint_p, eu
         print(f"\nThe normalized {k} nearest neighbors for the target instance provided (according to the "
               f"'{sorting_dist_estimate}' distance estimate) are:", file=file)
         print(normalized_knn_df, file=file)
-        print(file=file)
+        print('\n', file=file)
 
 
 def save_qknn_log(res_dir, filename, p0, p1, index_qubits_num, index_and_ancillary_joint_p, euclidean_distances,
@@ -115,7 +114,7 @@ def save_qknn_log(res_dir, filename, p0, p1, index_qubits_num, index_and_ancilla
     return filepath
 
 
-def save_probabilities_and_distances(res_dir, filename, index_and_ancillary_joint_p, euclidean_distances):
+def save_probabilities_and_distances(res_dir, filename, index_and_ancillary_joint_p, euclidean_distances, N):
     filepath = os.path.join(res_dir, f'{filename}.csv')
     with open(filepath, 'w') as csv_file:
         csv_file.write(
@@ -124,13 +123,14 @@ def save_probabilities_and_distances(res_dir, filename, index_and_ancillary_join
         )
         for index_bin_state, joint_p in index_and_ancillary_joint_p.items():
             index_dec_state = int(index_bin_state, 2)
-            distance_estimated = index_dec_state in euclidean_distances
+            significant_index = index_dec_state < N
+            estimated_distances = euclidean_distances[index_dec_state]
             csv_file.write('{},{},{},{},{},{},{},{}\n'.format(
                 index_dec_state, index_bin_state, joint_p['0'], joint_p['1'],
-                euclidean_distances[index_dec_state]['zero'] if distance_estimated else None,
-                euclidean_distances[index_dec_state]['one'] if distance_estimated else None,
-                euclidean_distances[index_dec_state]['avg'] if distance_estimated else None,
-                euclidean_distances[index_dec_state]['diff'] if distance_estimated else None
+                estimated_distances['zero'] if significant_index and 'zero' in estimated_distances else None,
+                estimated_distances['one'] if significant_index and 'one' in estimated_distances else None,
+                estimated_distances['avg'] if significant_index and 'avg' in estimated_distances else None,
+                estimated_distances['diff'] if significant_index and 'diff' in estimated_distances else None
             ))
 
     return filepath
