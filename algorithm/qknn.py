@@ -198,6 +198,12 @@ def get_probabilities_from_statevector(statevector, qubits_num, index_qubits_num
         ancillary_state = circuit_state[qubits_num - 1]
         index_and_ancillary_joint_p[index_state][ancillary_state] += state_probability
 
+    # Round the resulting probability values to the 12th decimal place
+    for j in range(0, (2 ** index_qubits_num)):
+        index_state = ('{0:0' + str(index_qubits_num) + 'b}').format(j)
+        index_and_ancillary_joint_p[index_state]['0'] = round(index_and_ancillary_joint_p[index_state]['0'], 12)
+        index_and_ancillary_joint_p[index_state]['1'] = round(index_and_ancillary_joint_p[index_state]['1'], 12)
+
     return p0, p1, index_and_ancillary_joint_p
 
 
@@ -210,11 +216,13 @@ def get_probabilities_from_counts(counts, index_qubits_num, shots, pseudocounts,
 
     # Process counts
     smoothed_total_counts = shots + pseudocounts * 2 * N
-    for measured_state, state_counts in counts.items():
+    for measured_dec_state in range(0, (2 ** (index_qubits_num + 1))):
+        measured_state = ('{0:0' + str(index_qubits_num + 1) + 'b}').format(measured_dec_state)
         index_state = measured_state[0: -1]
         index_dec_state = int(index_state, 2)
         ancillary_state = measured_state[-1]
 
+        state_counts = counts.get(measured_state, 0)
         smoothed_state_counts = state_counts + (pseudocounts if index_dec_state < N else 0)
         smoothed_state_probability = smoothed_state_counts / smoothed_total_counts
 
@@ -413,7 +421,7 @@ def run_qknn(training_data_file, target_instance_file, k, exec_type, encoding, b
             ))
             normalized_knn_dfs[i].to_csv(normalized_knn_out_files[i], index=False)
 
-        target_labels_dict = {dist_estimate: target_label
+        target_labels_dict = {dist_estimate: getattr(target_label, "tolist", lambda: target_label)()
                               for dist_estimate, target_label in zip(dist_estimates, target_labels)}
         target_labels_out_file = save_data_to_json_file(res_output_dir, 'target_label', target_labels_dict)
 

@@ -15,8 +15,8 @@ def print_cknn_results(verb_to_print, k, nearest_neighbors, training_instances, 
     print(f'Classically {verb_to_print} {k} nearest neighbors for the target instance provided:', file=file)
     index_max_chars = str(len(str(len(training_instances))))
     for index, distance in zip(nearest_neighbors[1][0], nearest_neighbors[0][0]):
-        element = np.array2string(training_instances[index], separator=', ')
-        print(('    index: {:'+index_max_chars+'d}, distance: {:.10f}, element: {}, label: {}')
+        element = '[' + ', '.join(['{:9.6f}'.format(x) for x in training_instances[index]]) + ']'
+        print(('    index: {:'+index_max_chars+'d}, distance: {:.10f}, element: {}, label: {:2d}')
               .format(index, distance, element, training_labels[index]), file=file)
 
     print(f'\nClassically {verb_to_print} target instance label: {target_label}', file=file)
@@ -75,6 +75,8 @@ def classical_knn(training_df, target_df, k, original_training_df, save_results_
         normalized_knn_out_file = os.path.join(cl_knn_output_dir, 'normalized_k_nearest_neighbors.csv')
         normalized_knn_df.to_csv(normalized_knn_out_file, index=False)
 
-        target_label_out_file = save_data_to_json_file(cl_knn_output_dir, 'target_label', {'exact': target_label})
+        target_label_out_file = save_data_to_json_file(
+            cl_knn_output_dir, 'target_label', {'exact': getattr(target_label, "tolist", lambda: target_label)()}
+        )
 
     return knn_indices_out_file, knn_out_file, normalized_knn_out_file, target_label_out_file
