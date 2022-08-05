@@ -9,6 +9,7 @@ import sys
 from matplotlib import pyplot as plt
 from qiskit import ClassicalRegister, QuantumRegister, QuantumCircuit, execute
 from qiskit.tools.monitor import job_monitor
+from scipy.stats import mode
 
 from algorithm.classical_knn import classical_knn
 from algorithm.utils import save_exp_config, select_backend, save_data_to_txt_file, save_data_to_json_file, \
@@ -58,25 +59,16 @@ def load_and_normalize_data(training_data_file, target_instance_file, res_input_
         print(f'\nNormalized target instance:\n{target_df}\n')
 
     # Save the normalized data (if needed)
-    normalized_data_files = [None, None]
     if store:
         normalized_training_data_file = \
             os.path.join(res_input_dir, 'normalized_{}'.format(os.path.basename(training_data_file)))
-        training_df.to_csv(
-            normalized_training_data_file,
-            index=False
-        )
+        training_df.to_csv(normalized_training_data_file, index=False)
 
         normalized_target_instance_file = \
             os.path.join(res_input_dir, 'normalized_{}'.format(os.path.basename(target_instance_file)))
-        target_df.to_csv(
-            normalized_target_instance_file,
-            index=False
-        )
+        target_df.to_csv(normalized_target_instance_file, index=False)
 
-        normalized_data_files = [normalized_training_data_file, normalized_target_instance_file]
-
-    return training_df, target_df, normalized_data_files
+    return training_df, target_df
 
 
 def build_qknn_circuit(training_df, target_df, N, d, encoding, exec_type):
@@ -296,20 +288,19 @@ def run_qknn(training_data_file, target_instance_file, k, exec_type, encoding, b
         save_exp_config(res_dir, 'exp_config', training_data_file, target_instance_file, k, exec_type, encoding,
                         backend_name, job_name, shots, pseudocounts, dist_estimates, verbose, save_circuit_plot)
 
-    # Load and normalize the input (training and target) data
-    training_df, target_df, normalized_data_files = \
-        load_and_normalize_data(training_data_file, target_instance_file, res_input_dir,
-                                verbose=verbose, store=store_results)
-    N, d = len(training_df), len(training_df.columns) - 1
-
     # Get the original training dataframe
     original_training_df = pd.read_csv(training_data_file, sep=',')
 
-    # If it is a classical execution, run the classical KNN and exit
+    # Load and normalize the input (training and target) data
+    training_df, target_df = load_and_normalize_data(training_data_file, target_instance_file, res_input_dir,
+                                                     verbose=verbose, store=store_results)
+    N, d = len(training_df), len(training_df.columns) - 1
+
+    # If it is a classical execution, run the classical k-NN and exit
     if exec_type == 'classical':
-        knn_indices_out_file, knn_out_file, normalized_knn_out_file = \
+        knn_indices_out_file, knn_out_file, normalized_knn_out_file, target_label_out_file = \
             classical_knn(training_df, target_df, k, original_training_df, store_results, res_dir, verbose=verbose)
-        return knn_indices_out_file, [knn_out_file], [normalized_knn_out_file]
+        return knn_indices_out_file, [knn_out_file], [normalized_knn_out_file], target_label_out_file
 
     # Select the backend for the execution
     backend = select_backend(exec_type, backend_name)
@@ -380,25 +371,29 @@ def run_qknn(training_data_file, target_instance_file, k, exec_type, encoding, b
                                                       N, index_qubits_num, target_norm ** 2, encoding)
 
     # Initialize some useful variables
-    sorted_indices_lists, knn_dfs, normalized_knn_dfs = [], [], []
-    knn_indices_out_file, knn_out_files, normalized_knn_out_files = None, [], []
+    sorted_indices_lists, knn_dfs, normalized_knn_dfs, target_labels = [], [], [], []
+    knn_indices_out_file, knn_out_files, normalized_knn_out_files, target_labels_out_file = None, [], [], None
 
-    # Get the k nearest neighbors based on the specified distance estimates
+    # Get the k nearest neighbors based on the specified distance estimates, and compute the target label accordingly
     for dist_estimate in dist_estimates:
         sorted_indices = [
             index for index, _ in sorted(euclidean_distances.items(), key=lambda item: item[1][dist_estimate])
         ]
         sorted_indices_lists.append(sorted_indices)
+
         knn_dfs.append(original_training_df.iloc[sorted_indices[0: k], :].reset_index(drop=True))
-        normalized_knn_dfs.append(training_df.iloc[sorted_indices[0: k], :].reset_index(drop=True))
+        normalized_knn_df = training_df.iloc[sorted_indices[0: k], :].reset_index(drop=True)
+        normalized_knn_dfs.append(normalized_knn_df)
+
+        target_labels.append(mode(normalized_knn_df.iloc[:, d]).mode[0])
 
     # Display and store the results (if needed)
     if verbose:
         print_qknn_results(p0, p1, index_qubits_num, index_and_ancillary_joint_p, euclidean_distances, dist_estimates,
-                           sorted_indices_lists, k, normalized_knn_dfs)
+                           sorted_indices_lists, k, normalized_knn_dfs, target_labels)
     if store_results:
         save_qknn_log(res_output_dir, 'qknn_log', p0, p1, index_qubits_num, index_and_ancillary_joint_p,
-                      euclidean_distances, dist_estimates, sorted_indices_lists, k, normalized_knn_dfs)
+                      euclidean_distances, dist_estimates, sorted_indices_lists, k, normalized_knn_dfs, target_labels)
 
         save_probabilities_and_distances(res_output_dir, 'qknn_probabilities_and_distances',
                                          index_and_ancillary_joint_p, euclidean_distances, N)
@@ -418,4 +413,8 @@ def run_qknn(training_data_file, target_instance_file, k, exec_type, encoding, b
             ))
             normalized_knn_dfs[i].to_csv(normalized_knn_out_files[i], index=False)
 
-    return knn_indices_out_file, knn_out_files, normalized_knn_out_files
+        target_labels_dict = {dist_estimate: target_label
+                              for dist_estimate, target_label in zip(dist_estimates, target_labels)}
+        target_labels_out_file = save_data_to_json_file(res_output_dir, 'target_label', target_labels_dict)
+
+    return knn_indices_out_file, knn_out_files, normalized_knn_out_files, target_labels_out_file
