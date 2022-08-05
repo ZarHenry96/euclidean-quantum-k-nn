@@ -108,61 +108,48 @@ def build_qknn_circuit(training_df, target_df, N, d, encoding, exec_type):
     target_norm = np.linalg.norm(target_df.iloc[0, 0:d])
 
     # Compute the training data amplitudes
-    encoded_training_set = []
     for instance_index, row in training_df.iterrows():
         training_norms.append(np.linalg.norm(row[0:d]))
-        # encoded_training_set.append([])
 
         # Training instance features (two times)
         for i in range(0, 2 * d):
             index = 2 * instance_index + (2 ** (index_qubits_num + 1)) * i
             amplitudes[index] = amplitudes_base_value * multiplication_factor * row[i % d]
-            # encoded_training_set[-1].append(amplitudes[index] / amplitudes_base_value)
 
         # Training instance norm
         index = 2 * instance_index + (2 ** (index_qubits_num + 1)) * (2 * d)
         amplitudes[index] = amplitudes_base_value * multiplication_factor * training_norms[-1]
-        # encoded_training_set[-1].append(amplitudes[index] / amplitudes_base_value)
 
         # Translation feature (for translation encoding)
         if encoding == 'translation':
             index = 2 * instance_index + (2 ** (index_qubits_num + 1)) * (2 * d + features_offset)
             amplitudes[index] = amplitudes_base_value * translation_feature_abs_value
-            # encoded_training_set[-1].append(translation_feature_abs_value)
 
         # Zero value
         index = 2 * instance_index + (2 ** (index_qubits_num + 1)) * (2 * d + features_offset + 1)
         amplitudes[index] = amplitudes_base_value * 0
-        # encoded_training_set[-1].append(0)
 
         # Residual (for unitary norm)
         index = 2 * instance_index + (2 ** (index_qubits_num + 1)) * (2 * d + features_offset + 2)
         amplitudes[index] = amplitudes_base_value * math.sqrt(
             1 - (3 * multiplication_factor**2 * training_norms[-1]**2 + translation_feature_abs_value**2)
         )
-        # encoded_training_set[-1].append(amplitudes[index] / amplitudes_base_value)
 
     # Compute the target instance amplitudes
-    encoded_target_instances = []
     for j in range(0, N):
-        # encoded_target_instances.append([])
-
         # Target instance features with sign flipped (two times)
         for i in range(0, 2 * d):
             index = 1 + 2 * j + (2 ** (index_qubits_num + 1)) * i
             amplitudes[index] = amplitudes_base_value * multiplication_factor * (-target_df.iloc[0, i % d])
-            # encoded_target_instances[-1].append(amplitudes[index] / amplitudes_base_value)
 
         # Corresponding training instance norm
         index = 1 + 2 * j + (2 ** (index_qubits_num+1)) * (2 * d)
         amplitudes[index] = amplitudes_base_value * multiplication_factor * training_norms[j]
-        # encoded_target_instances[-1].append(amplitudes[index] / amplitudes_base_value)
 
         # Translation feature (for translation encoding)
         if encoding == 'translation':
             index = 1 + 2 * j + (2 ** (index_qubits_num + 1)) * (2 * d + features_offset)
             amplitudes[index] = amplitudes_base_value * (-translation_feature_abs_value)
-            # encoded_target_instances[-1].append(-translation_feature_abs_value)
 
         # Residual (for unitary norm)
         index = 1 + 2 * j + (2 ** (index_qubits_num + 1)) * (2 * d + features_offset + 1)
@@ -170,12 +157,10 @@ def build_qknn_circuit(training_df, target_df, N, d, encoding, exec_type):
             1 - (2 * multiplication_factor**2 * target_norm**2 + multiplication_factor**2 * training_norms[j]**2 +
                  translation_feature_abs_value**2)
         )
-        # encoded_target_instances[-1].append(amplitudes[index] / amplitudes_base_value)
 
         # Zero value
         index = 1 + 2 * j + (2 ** (index_qubits_num + 1)) * (2 * d + features_offset + 2)
         amplitudes[index] = amplitudes_base_value * 0
-        # encoded_target_instances[-1].append(0)
 
     # Set all "target CNOT-SWAP qubit + index_register + features_register" amplitudes
     target_cnot_swap_qubit = 1
@@ -197,8 +182,7 @@ def build_qknn_circuit(training_df, target_df, N, d, encoding, exec_type):
         first_index_qubit = 2
         circuit.measure(qr[first_index_qubit: first_index_qubit + index_qubits_num], cr[1: 1 + index_qubits_num])
 
-    return circuit, qubits_num, index_qubits_num, features_qubits_num, target_norm, \
-           [encoded_training_set, encoded_target_instances]
+    return circuit, qubits_num, index_qubits_num, features_qubits_num, target_norm
 
 
 def get_probabilities_from_statevector(statevector, qubits_num, index_qubits_num):
@@ -330,22 +314,19 @@ def run_qknn(training_data_file, target_instance_file, k, exec_type, encoding, b
     # Select the backend for the execution
     backend = select_backend(exec_type, backend_name)
 
-    # Compute the expected k nearest neighbors (classical computation)
-    classical_knn(training_df, target_df, k, original_training_df, store_results, res_dir,
-                  expectation=True, verbose=verbose)
-
     # Build the quantum circuit
-    circuit, qubits_num, index_qubits_num, features_qubits_num, target_norm, _ = \
+    circuit, qubits_num, index_qubits_num, features_qubits_num, target_norm = \
         build_qknn_circuit(training_df, target_df, N, d, encoding, exec_type)
 
     # Draw, show, and save the circuit (if needed)
-    circuit_for_drawing = copy.deepcopy(circuit)
-    circuit_for_drawing.data[0][0].params = []
-    if verbose:
-        print('\n{}'.format(circuit_for_drawing.draw(output='text')))
-    if store_results and save_circuit_plot:
-        circuit_for_drawing.draw(output='mpl', filename=os.path.join(res_dir, 'qknn_circuit.png'), fold=-1)
-        plt.close()
+    if verbose or (store_results and save_circuit_plot):
+        circuit_for_drawing = copy.deepcopy(circuit)
+        circuit_for_drawing.data[0][0].params = []
+        if verbose:
+            print('\n{}'.format(circuit_for_drawing.draw(output='text')))
+        if store_results and save_circuit_plot:
+            circuit_for_drawing.draw(output='mpl', filename=os.path.join(res_dir, 'qknn_circuit.png'), fold=-1)
+            plt.close()
 
     # Execute the job
     if exec_type == 'statevector':
@@ -372,7 +353,7 @@ def run_qknn(training_data_file, target_instance_file, k, exec_type, encoding, b
     if exec_type == 'statevector':
         output_statevector = result.get_statevector(circuit, decimals=15)
         if verbose:
-            print(f'\nOutput state vector:\n{list(output_statevector)}')
+            print(f'\nResults\n\nOutput state vector:\n{list(output_statevector)}')
         if store_results:
             save_data_to_txt_file(res_output_dir, 'qknn_output_state_vector', list(output_statevector))
 
