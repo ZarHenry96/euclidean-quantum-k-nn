@@ -47,7 +47,7 @@ def load_and_normalize_data(training_data_file, target_instance_file, res_input_
         (target_df.iloc[0, :features_number] - training_min_max_avg) / (training_range * sqrt_features_number)
     lower_bound, upper_bound = -1 / (2 * sqrt_features_number), 1 / (2 * sqrt_features_number)
     for attribute_index, attribute_val in enumerate(target_df.iloc[0, 0:features_number]):
-        target_df.iloc[0, attribute_index] = max(min(upper_bound, attribute_val), lower_bound)
+        target_df.iloc[0, attribute_index] = max(min(attribute_val, upper_bound), lower_bound)
 
     # Normalize the training data
     training_df.iloc[:, :features_number] = \
@@ -242,7 +242,7 @@ def get_sqrt_argument_from_scalar_product(scalar_product, squared_target_norm, e
     else:
         sqrt_arg = scalar_product + (1 / 4) + squared_target_norm
 
-    return sqrt_arg if sqrt_arg >= 0.0 else 0.0
+    return max(min(sqrt_arg, 1.0), 0.0)
 
 
 def extract_euclidean_distances(index_and_ancillary_joint_p, dist_estimates, N, index_qubits_num, squared_target_norm,

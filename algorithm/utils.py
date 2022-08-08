@@ -66,7 +66,7 @@ def print_qknn_results(p0, p1, index_qubits_num, index_and_ancillary_joint_p, eu
     if file == sys.stdout:
         print()
     print('P(ancillary_qubit_state):', file=file)
-    print('\tP(0) = {:.10f}\tP(1) = {:.10f}'.format(p0, p1), file=file)
+    print('\tP(0) = {:.10f}    P(1) = {:.10f}'.format(p0, p1), file=file)
 
     index_dec_max_chars = str(len(str(2 ** index_qubits_num - 1)))
 
@@ -127,11 +127,11 @@ def save_probabilities_and_distances(res_dir, filename, index_and_ancillary_join
             significant_index = index_dec_state < N
             estimated_distances = euclidean_distances[index_dec_state]
             csv_file.write('{},{},{},{},{},{},{},{}\n'.format(
-                index_dec_state, index_bin_state, joint_p['0'], joint_p['1'],
-                estimated_distances['zero'] if significant_index and 'zero' in estimated_distances else None,
-                estimated_distances['one'] if significant_index and 'one' in estimated_distances else None,
-                estimated_distances['avg'] if significant_index and 'avg' in estimated_distances else None,
-                estimated_distances['diff'] if significant_index and 'diff' in estimated_distances else None
+                index_dec_state, index_bin_state, round(joint_p['0'], 10), round(joint_p['1'], 10),
+                round(estimated_distances['zero'], 10) if significant_index and 'zero' in estimated_distances else '',
+                round(estimated_distances['one'], 10) if significant_index and 'one' in estimated_distances else '',
+                round(estimated_distances['avg'], 10) if significant_index and 'avg' in estimated_distances else '',
+                round(estimated_distances['diff'], 10) if significant_index and 'diff' in estimated_distances else ''
             ))
 
     return filepath
