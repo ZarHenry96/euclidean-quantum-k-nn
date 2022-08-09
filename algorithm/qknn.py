@@ -11,7 +11,7 @@ from qiskit import ClassicalRegister, QuantumRegister, QuantumCircuit, execute
 from qiskit.tools.monitor import job_monitor
 from scipy.stats import mode
 
-from algorithm.classical_knn import classical_knn
+from algorithm.classical_knn import run_classical_knn
 from algorithm.utils import save_exp_config, select_backend, save_data_to_txt_file, save_data_to_json_file, \
     print_qknn_results, save_qknn_log, save_probabilities_and_distances
 
@@ -307,7 +307,8 @@ def run_qknn(training_data_file, target_instance_file, k, exec_type, encoding, b
     # If it is a classical execution, run the classical k-NN and exit
     if exec_type == 'classical':
         knn_indices_out_file, knn_out_file, normalized_knn_out_file, target_label_out_file = \
-            classical_knn(training_df, target_df, k, original_training_df, store_results, res_dir, verbose=verbose)
+            run_classical_knn(training_df, target_df, k, N, d, original_training_df, res_output_dir,
+                              verbose=verbose, store_results=store_results)
         return knn_indices_out_file, [knn_out_file], [normalized_knn_out_file], target_label_out_file
 
     # Select the backend for the execution
@@ -380,7 +381,6 @@ def run_qknn(training_data_file, target_instance_file, k, exec_type, encoding, b
 
     # Initialize some useful variables
     sorted_indices_lists, knn_dfs, normalized_knn_dfs, target_labels = [], [], [], []
-    knn_indices_out_file, knn_out_files, normalized_knn_out_files, target_labels_out_file = None, [], [], None
 
     # Get the k nearest neighbors based on the specified distance estimates, and compute the target label accordingly
     for dist_estimate in dist_estimates:
@@ -395,10 +395,13 @@ def run_qknn(training_data_file, target_instance_file, k, exec_type, encoding, b
 
         target_labels.append(mode(normalized_knn_df.iloc[:, d]).mode[0])
 
-    # Display and store the results (if needed)
+    # Show the results (if needed)
     if verbose:
         print_qknn_results(p0, p1, index_qubits_num, index_and_ancillary_joint_p, euclidean_distances, dist_estimates,
                            sorted_indices_lists, k, normalized_knn_dfs, target_labels)
+
+    # Store the results (if needed)
+    knn_indices_out_file, knn_out_files, normalized_knn_out_files, target_labels_out_file = None, [], [], None
     if store_results:
         save_qknn_log(res_output_dir, 'qknn_log', p0, p1, index_qubits_num, index_and_ancillary_joint_p,
                       euclidean_distances, dist_estimates, sorted_indices_lists, k, normalized_knn_dfs, target_labels)

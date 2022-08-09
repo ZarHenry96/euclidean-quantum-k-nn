@@ -23,7 +23,7 @@ if __name__ == '__main__':
     parser.add_argument('--encoding', metavar='encoding', type=str, nargs='?', default='extension',
                         help='type of samples encoding, allowed values: extension, translation.')
     parser.add_argument('--backend-name', metavar='backend_name', type=str, nargs='?',
-                        default='ibmq_qasm_simulator|ibmq_nairobi',
+                        default='ibmq_qasm_simulator|ibm_nairobi',
                         help='name of the online backend, either an online simulator or a quantum device.')
     parser.add_argument('--job-name', metavar='job_name', type=str, nargs='?', default=None,
                         help='name assigned to the online job (only for online executions).')
@@ -61,7 +61,7 @@ if __name__ == '__main__':
         exit(-1)
 
     backend_name = args.backend_name
-    if exec_type in ['online_simulation', 'quantum'] and backend_name == 'ibmq_qasm_simulator|ibmq_nairobi':
+    if exec_type in ['online_simulation', 'quantum'] and backend_name == 'ibmq_qasm_simulator|ibm_nairobi':
         backend_name = backend_name.split('|')[0 if exec_type == 'online_simulation' else 1]
 
     job_name = args.job_name if args.job_name is not None else f'qknn_{exec_type}'

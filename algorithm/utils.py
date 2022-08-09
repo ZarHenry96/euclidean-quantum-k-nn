@@ -94,8 +94,8 @@ def print_qknn_results(p0, p1, index_qubits_num, index_and_ancillary_joint_p, eu
         for i, index_dec_state in enumerate(sorted_indices):
             estimated_distance = euclidean_distances[index_dec_state][dist_estimate]
             if i == k:
-                print('\t' + '-' * 27, file=file)
-            print(('\tindex state {:'+index_dec_max_chars+'d}: {:.10f}')
+                print('\t' + '-' * 38, file=file)
+            print(('\tindex state: {:'+index_dec_max_chars+'d}, distance: {:.10f}')
                   .format(index_dec_state, estimated_distance), file=file)
 
         print(f"\nThe normalized {k} nearest neighbors for the target instance provided (according to the "
