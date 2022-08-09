@@ -5,6 +5,7 @@ import os
 import pandas as pd
 import shutil
 import sys
+import time
 
 from matplotlib import pyplot as plt
 from qiskit import ClassicalRegister, QuantumRegister, QuantumCircuit, execute
@@ -285,7 +286,9 @@ def extract_euclidean_distances(index_and_ancillary_joint_p, dist_estimates, N, 
 def run_qknn(training_data_file, target_instance_file, k, exec_type, encoding, backend_name, job_name, shots,
              pseudocounts, dist_estimates, res_dir, classical_expectation=False, verbose=True, store_results=True,
              save_circuit_plot=True):
-    # Prepare results directories
+    start_time = time.time()
+
+    # Prepare the results directories
     res_c_expectation_dir = os.path.join(res_dir, 'classical_expectation')
     res_input_dir = os.path.join(res_dir, 'input')
     res_output_dir = os.path.join(res_dir, 'output')
@@ -310,19 +313,27 @@ def run_qknn(training_data_file, target_instance_file, k, exec_type, encoding, b
     N, d = len(training_df), len(training_df.columns) - 1
 
     # Compute the classical expectation (if needed)
+    classical_expectation_start_time = time.time()
     expected_knn_indices_out_file = None
     if classical_expectation:
         expected_knn_indices_out_file, _, _, _ = \
             run_cknn(training_df, target_df, k, N, d, original_training_df, res_c_expectation_dir,
                      expectation=True, verbose=verbose, store_results=store_results)
 
+    # Compute the time required by the classical expectation
+    classical_expectation_time = time.time() - classical_expectation_start_time
+
     # If it is a classical execution, run the classical k-NN and exit
     if exec_type == 'classical':
         knn_indices_out_file, knn_out_file, normalized_knn_out_file, target_label_out_file = \
             run_cknn(training_df, target_df, k, N, d, original_training_df, res_output_dir,
                      expectation=False, verbose=verbose, store_results=store_results)
+
+        # Compute the execution time of the algorithm w/o the time required by the classical expectation
+        algorithm_execution_time = (time.time() - start_time) - classical_expectation_time
+
         return (knn_indices_out_file, [knn_out_file], [normalized_knn_out_file], target_label_out_file), \
-               expected_knn_indices_out_file
+               expected_knn_indices_out_file, (algorithm_execution_time, classical_expectation_time)
 
     # Select the backend for the execution
     backend = select_backend(exec_type, backend_name)
@@ -402,9 +413,8 @@ def run_qknn(training_data_file, target_instance_file, k, exec_type, encoding, b
         ]
         sorted_indices_lists.append(sorted_indices)
 
-        knn_indices = sorted_indices[0: k]
-        knn_dfs.append(original_training_df.iloc[knn_indices, :].reset_index(drop=True))
-        normalized_knn_df = training_df.iloc[knn_indices, :].reset_index(drop=True)
+        knn_dfs.append(original_training_df.iloc[sorted_indices[0: k], :].reset_index(drop=True))
+        normalized_knn_df = training_df.iloc[sorted_indices[0: k], :].reset_index(drop=True)
         normalized_knn_dfs.append(normalized_knn_df)
 
         target_labels.append(mode(normalized_knn_df.iloc[:, d]).mode[0])
@@ -442,5 +452,8 @@ def run_qknn(training_data_file, target_instance_file, k, exec_type, encoding, b
                               for dist_estimate, target_label in zip(dist_estimates, target_labels)}
         target_labels_out_file = save_data_to_json_file(res_output_dir, 'target_label', target_labels_dict)
 
+    # Compute the execution time of the algorithm w/o the time required by the classical expectation
+    algorithm_execution_time = (time.time() - start_time) - classical_expectation_time
+
     return (knn_indices_out_file, knn_out_files, normalized_knn_out_files, target_labels_out_file), \
-           expected_knn_indices_out_file
+           expected_knn_indices_out_file, (algorithm_execution_time, classical_expectation_time)
