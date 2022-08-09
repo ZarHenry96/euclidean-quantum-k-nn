@@ -37,6 +37,8 @@ if __name__ == '__main__':
                         '\'exact\' values.')
     parser.add_argument('--res-dir', metavar='res_dir', type=str, nargs='?', default=None,
                         help='directory where to store the results.')
+    parser.add_argument('--classical-expectation', dest='classical_expectation', action='store_const',
+                        const=True, default=False, help='compute (classically) the expected indices and distances.')
     parser.add_argument('--not-verbose', dest='not_verbose', action='store_const', const=True, default=False,
                         help='no information is printed on the stdout.')
     parser.add_argument('--not-store', dest='not_store', action='store_const', const=True, default=False,
@@ -78,5 +80,5 @@ if __name__ == '__main__':
                            datetime.now().strftime('%d-%m-%Y_%H-%M-%S'))
 
     run_qknn(args.training_data_file, args.target_instance_file, args.k, exec_type, encoding, backend_name,
-             job_name, args.shots, args.pseudocounts, dist_estimates, res_dir, not args.not_verbose,
-             not args.not_store, not args.not_save_circuit_plot)
+             job_name, args.shots, args.pseudocounts, dist_estimates, res_dir, args.classical_expectation,
+             not args.not_verbose, not args.not_store, not args.not_save_circuit_plot)

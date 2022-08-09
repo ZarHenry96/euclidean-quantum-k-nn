@@ -14,7 +14,8 @@ def save_data_to_json_file(res_dir, filename, data):
 
 
 def save_exp_config(res_dir, filename, training_data_file, target_instance_file, k, exec_type, encoding,
-                    backend_name, job_name, shots, pseudocounts, dist_estimates, verbose, save_circuit_plot):
+                    backend_name, job_name, shots, pseudocounts, dist_estimates, classical_expectation,
+                    verbose, save_circuit_plot):
     config = {
         'training_data': training_data_file,
         'target_data': target_instance_file,
@@ -27,6 +28,7 @@ def save_exp_config(res_dir, filename, training_data_file, target_instance_file,
         'pseudocounts': pseudocounts,
         'sorting_dist_estimates': dist_estimates,
         'res_dir': res_dir,
+        'classical_expectation': classical_expectation,
         'verbose': verbose,
         'store_results': True,
         'save_circuit_plot': save_circuit_plot
@@ -125,13 +127,16 @@ def save_probabilities_and_distances(res_dir, filename, index_and_ancillary_join
         for index_bin_state, joint_p in index_and_ancillary_joint_p.items():
             index_dec_state = int(index_bin_state, 2)
             significant_index = index_dec_state < N
-            estimated_distances = euclidean_distances[index_dec_state]
             csv_file.write('{},{},{},{},{},{},{},{}\n'.format(
                 index_dec_state, index_bin_state, round(joint_p['0'], 10), round(joint_p['1'], 10),
-                round(estimated_distances['zero'], 10) if significant_index and 'zero' in estimated_distances else '',
-                round(estimated_distances['one'], 10) if significant_index and 'one' in estimated_distances else '',
-                round(estimated_distances['avg'], 10) if significant_index and 'avg' in estimated_distances else '',
-                round(estimated_distances['diff'], 10) if significant_index and 'diff' in estimated_distances else ''
+                round(euclidean_distances[index_dec_state]['zero'], 10)
+                if significant_index and 'zero' in euclidean_distances[index_dec_state] else '',
+                round(euclidean_distances[index_dec_state]['one'], 10)
+                if significant_index and 'one' in euclidean_distances[index_dec_state] else '',
+                round(euclidean_distances[index_dec_state]['avg'], 10)
+                if significant_index and 'avg' in euclidean_distances[index_dec_state] else '',
+                round(euclidean_distances[index_dec_state]['diff'], 10)
+                if significant_index and 'diff' in euclidean_distances[index_dec_state] else ''
             ))
 
     return filepath

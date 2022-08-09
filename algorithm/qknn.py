@@ -11,7 +11,7 @@ from qiskit import ClassicalRegister, QuantumRegister, QuantumCircuit, execute
 from qiskit.tools.monitor import job_monitor
 from scipy.stats import mode
 
-from algorithm.classical_knn import run_classical_knn
+from algorithm.classical_knn import run_cknn
 from algorithm.utils import save_exp_config, select_backend, save_data_to_txt_file, save_data_to_json_file, \
     print_qknn_results, save_qknn_log, save_probabilities_and_distances
 
@@ -283,18 +283,23 @@ def extract_euclidean_distances(index_and_ancillary_joint_p, dist_estimates, N, 
 
 
 def run_qknn(training_data_file, target_instance_file, k, exec_type, encoding, backend_name, job_name, shots,
-             pseudocounts, dist_estimates, res_dir, verbose=True, store_results=True, save_circuit_plot=True):
+             pseudocounts, dist_estimates, res_dir, classical_expectation=False, verbose=True, store_results=True,
+             save_circuit_plot=True):
     # Prepare results directories
+    res_c_expectation_dir = os.path.join(res_dir, 'classical_expectation')
     res_input_dir = os.path.join(res_dir, 'input')
     res_output_dir = os.path.join(res_dir, 'output')
     if store_results:
         os.makedirs(res_dir, exist_ok=True)
+        if classical_expectation:
+            os.makedirs(res_c_expectation_dir, exist_ok=True)
         os.makedirs(res_input_dir, exist_ok=True)
         os.makedirs(res_output_dir, exist_ok=True)
 
         # Save the experiment configuration
         save_exp_config(res_dir, 'exp_config', training_data_file, target_instance_file, k, exec_type, encoding,
-                        backend_name, job_name, shots, pseudocounts, dist_estimates, verbose, save_circuit_plot)
+                        backend_name, job_name, shots, pseudocounts, dist_estimates, classical_expectation, verbose,
+                        save_circuit_plot)
 
     # Get the original training dataframe
     original_training_df = pd.read_csv(training_data_file, sep=',')
@@ -304,12 +309,20 @@ def run_qknn(training_data_file, target_instance_file, k, exec_type, encoding, b
                                                      verbose=verbose, store=store_results)
     N, d = len(training_df), len(training_df.columns) - 1
 
+    # Compute the classical expectation (if needed)
+    expected_knn_indices_out_file = None
+    if classical_expectation:
+        expected_knn_indices_out_file, _, _, _ = \
+            run_cknn(training_df, target_df, k, N, d, original_training_df, res_c_expectation_dir,
+                     expectation=True, verbose=verbose, store_results=store_results)
+
     # If it is a classical execution, run the classical k-NN and exit
     if exec_type == 'classical':
         knn_indices_out_file, knn_out_file, normalized_knn_out_file, target_label_out_file = \
-            run_classical_knn(training_df, target_df, k, N, d, original_training_df, res_output_dir,
-                              verbose=verbose, store_results=store_results)
-        return knn_indices_out_file, [knn_out_file], [normalized_knn_out_file], target_label_out_file
+            run_cknn(training_df, target_df, k, N, d, original_training_df, res_output_dir,
+                     expectation=False, verbose=verbose, store_results=store_results)
+        return (knn_indices_out_file, [knn_out_file], [normalized_knn_out_file], target_label_out_file), \
+               expected_knn_indices_out_file
 
     # Select the backend for the execution
     backend = select_backend(exec_type, backend_name)
@@ -389,8 +402,9 @@ def run_qknn(training_data_file, target_instance_file, k, exec_type, encoding, b
         ]
         sorted_indices_lists.append(sorted_indices)
 
-        knn_dfs.append(original_training_df.iloc[sorted_indices[0: k], :].reset_index(drop=True))
-        normalized_knn_df = training_df.iloc[sorted_indices[0: k], :].reset_index(drop=True)
+        knn_indices = sorted_indices[0: k]
+        knn_dfs.append(original_training_df.iloc[knn_indices, :].reset_index(drop=True))
+        normalized_knn_df = training_df.iloc[knn_indices, :].reset_index(drop=True)
         normalized_knn_dfs.append(normalized_knn_df)
 
         target_labels.append(mode(normalized_knn_df.iloc[:, d]).mode[0])
@@ -428,4 +442,5 @@ def run_qknn(training_data_file, target_instance_file, k, exec_type, encoding, b
                               for dist_estimate, target_label in zip(dist_estimates, target_labels)}
         target_labels_out_file = save_data_to_json_file(res_output_dir, 'target_label', target_labels_dict)
 
-    return knn_indices_out_file, knn_out_files, normalized_knn_out_files, target_labels_out_file
+    return (knn_indices_out_file, knn_out_files, normalized_knn_out_files, target_labels_out_file), \
+           expected_knn_indices_out_file
