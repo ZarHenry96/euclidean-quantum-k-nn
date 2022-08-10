@@ -1,4 +1,3 @@
-import copy
 import math
 import numpy as np
 import os
@@ -331,10 +330,13 @@ def run_qknn(training_data_file, target_instance_file, k, exec_type, encoding, b
             run_cknn(training_df, target_df, k, N, d, original_training_df, res_output_dir,
                      expectation=False, verbose=verbose, store_results=store_results)
 
+        knn_out_files = [knn_out_file] if knn_out_file is not None else []
+        normalized_knn_out_files = [normalized_knn_out_file] if normalized_knn_out_file is not None else []
+
         # Compute the execution time of the algorithm w/o the time required by the classical expectation
         algorithm_execution_time = (time.time() - start_time) - classical_expectation_time
 
-        return (knn_indices_out_file, [knn_out_file], [normalized_knn_out_file], target_label_out_file), \
+        return (knn_indices_out_file, knn_out_files, normalized_knn_out_files, target_label_out_file), \
                expected_knn_indices_out_file, normalized_target_instance_file, \
                (algorithm_execution_time, classical_expectation_time)
 
@@ -419,7 +421,7 @@ def run_qknn(training_data_file, target_instance_file, k, exec_type, encoding, b
         normalized_knn_df = training_df.iloc[sorted_indices[0: k], :].reset_index(drop=True)
         normalized_knn_dfs.append(normalized_knn_df)
 
-        target_labels.append(mode(normalized_knn_df.iloc[:, d]).mode[0])
+        target_labels.append(mode(normalized_knn_df.iloc[:, d], keepdims=False).mode)
 
     # Show the results (if needed)
     if verbose:
@@ -427,7 +429,7 @@ def run_qknn(training_data_file, target_instance_file, k, exec_type, encoding, b
                            sorted_indices_lists, k, normalized_knn_dfs, target_labels)
 
     # Store the results (if needed)
-    knn_indices_out_file, knn_out_files, normalized_knn_out_files, target_labels_out_file = None, [], [], None
+    knn_indices_out_file, knn_out_files, normalized_knn_out_files, target_label_out_file = None, [], [], None
     if store_results:
         save_qknn_log(res_output_dir, 'qknn_log', p0, p1, index_qubits_num, index_and_ancillary_joint_p,
                       euclidean_distances, dist_estimates, sorted_indices_lists, k, normalized_knn_dfs, target_labels)
@@ -452,11 +454,11 @@ def run_qknn(training_data_file, target_instance_file, k, exec_type, encoding, b
 
         target_labels_dict = {dist_estimate: getattr(target_label, "tolist", lambda: target_label)()
                               for dist_estimate, target_label in zip(dist_estimates, target_labels)}
-        target_labels_out_file = save_data_to_json_file(res_output_dir, 'target_label', target_labels_dict)
+        target_label_out_file = save_data_to_json_file(res_output_dir, 'target_label', target_labels_dict)
 
     # Compute the execution time of the algorithm w/o the time required by the classical expectation
     algorithm_execution_time = (time.time() - start_time) - classical_expectation_time
 
-    return (knn_indices_out_file, knn_out_files, normalized_knn_out_files, target_labels_out_file), \
+    return (knn_indices_out_file, knn_out_files, normalized_knn_out_files, target_label_out_file), \
            expected_knn_indices_out_file, normalized_target_instance_file, \
            (algorithm_execution_time, classical_expectation_time)

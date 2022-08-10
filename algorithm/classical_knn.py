@@ -88,7 +88,7 @@ def run_cknn(training_df, target_df, k, N, d, original_training_df, res_dir, exp
     if not expectation:
         knn_df = original_training_df.iloc[knn_indices, :].reset_index(drop=True)
         normalized_knn_df = training_df.iloc[knn_indices, :].reset_index(drop=True)
-        target_label = mode(normalized_knn_df.iloc[:, d]).mode[0]
+        target_label = mode(normalized_knn_df.iloc[:, d], keepdims=False).mode
 
     # Show the results (if needed)
     if verbose:
