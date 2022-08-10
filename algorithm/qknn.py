@@ -345,15 +345,14 @@ def run_qknn(training_data_file, target_instance_file, k, exec_type, encoding, b
     circuit, qubits_num, index_qubits_num, features_qubits_num, target_norm = \
         build_qknn_circuit(training_df, target_df, N, d, encoding, exec_type)
 
-    # Draw, show, and save the circuit (if needed)
-    if verbose or (store_results and save_circuit_plot):
-        circuit_for_drawing = copy.deepcopy(circuit)
-        circuit_for_drawing.data[0][0].params = []
+    # Draw and save the circuit (if needed)
+    if store_results and save_circuit_plot:
+        circuit_filepath = os.path.join(res_dir, 'qknn_circuit.png')
+        circuit.draw(output='mpl', filename=circuit_filepath, fold=-1)
+        plt.close()
+
         if verbose:
-            print('\n{}'.format(circuit_for_drawing.draw(output='text')))
-        if store_results and save_circuit_plot:
-            circuit_for_drawing.draw(output='mpl', filename=os.path.join(res_dir, 'qknn_circuit.png'), fold=-1)
-            plt.close()
+            print('\nThe circuit plot is available at: {}\n'.format(circuit_filepath))
 
     # Execute the job
     if exec_type == 'statevector':
