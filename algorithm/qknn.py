@@ -60,6 +60,7 @@ def load_and_normalize_data(training_data_file, target_instance_file, res_input_
         print(f'\nNormalized target instance:\n{target_df}\n')
 
     # Save the normalized data (if needed)
+    normalized_target_instance_file = None
     if store:
         normalized_training_data_file = \
             os.path.join(res_input_dir, 'normalized_{}'.format(os.path.basename(training_data_file)))
@@ -69,7 +70,7 @@ def load_and_normalize_data(training_data_file, target_instance_file, res_input_
             os.path.join(res_input_dir, 'normalized_{}'.format(os.path.basename(target_instance_file)))
         target_df.to_csv(normalized_target_instance_file, index=False)
 
-    return training_df, target_df
+    return training_df, target_df, normalized_target_instance_file
 
 
 def build_qknn_circuit(training_df, target_df, N, d, encoding, exec_type):
@@ -308,8 +309,9 @@ def run_qknn(training_data_file, target_instance_file, k, exec_type, encoding, b
     original_training_df = pd.read_csv(training_data_file, sep=',')
 
     # Load and normalize the input (training and target) data
-    training_df, target_df = load_and_normalize_data(training_data_file, target_instance_file, res_input_dir,
-                                                     verbose=verbose, store=store_results)
+    training_df, target_df, normalized_target_instance_file = \
+        load_and_normalize_data(training_data_file, target_instance_file, res_input_dir, verbose=verbose,
+                                store=store_results)
     N, d = len(training_df), len(training_df.columns) - 1
 
     # Compute the classical expectation (if needed)
@@ -333,7 +335,8 @@ def run_qknn(training_data_file, target_instance_file, k, exec_type, encoding, b
         algorithm_execution_time = (time.time() - start_time) - classical_expectation_time
 
         return (knn_indices_out_file, [knn_out_file], [normalized_knn_out_file], target_label_out_file), \
-               expected_knn_indices_out_file, (algorithm_execution_time, classical_expectation_time)
+               expected_knn_indices_out_file, normalized_target_instance_file, \
+               (algorithm_execution_time, classical_expectation_time)
 
     # Select the backend for the execution
     backend = select_backend(exec_type, backend_name)
@@ -456,4 +459,5 @@ def run_qknn(training_data_file, target_instance_file, k, exec_type, encoding, b
     algorithm_execution_time = (time.time() - start_time) - classical_expectation_time
 
     return (knn_indices_out_file, knn_out_files, normalized_knn_out_files, target_labels_out_file), \
-           expected_knn_indices_out_file, (algorithm_execution_time, classical_expectation_time)
+           expected_knn_indices_out_file, normalized_target_instance_file, \
+           (algorithm_execution_time, classical_expectation_time)

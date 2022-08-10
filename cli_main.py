@@ -79,6 +79,33 @@ if __name__ == '__main__':
     res_dir = os.path.join(root_res_dir, exec_type, encoding if exec_type != 'classical' else '',
                            datetime.now().strftime('%d-%m-%Y_%H-%M-%S'))
 
-    run_qknn(args.training_data_file, args.target_instance_file, args.k, exec_type, encoding, backend_name,
-             job_name, args.shots, args.pseudocounts, dist_estimates, res_dir, args.classical_expectation,
-             not args.not_verbose, not args.not_store, not args.not_save_circuit_plot)
+    (knn_indices_file, knn_files, normalized_knn_files, target_labels_file), expected_knn_indices_file, \
+    normalized_target_instance_file, (algorithm_execution_time, classical_expectation_time) = \
+        run_qknn(args.training_data_file, args.target_instance_file, args.k, exec_type, encoding, backend_name,
+                 job_name, args.shots, args.pseudocounts, dist_estimates, res_dir, args.classical_expectation,
+                 not args.not_verbose, not args.not_store, not args.not_save_circuit_plot)
+
+    if not args.not_verbose:
+        print('\n\n' + '=' * 120 + '\n\n')
+
+    print('Algorithm output files:')
+    print('\tk-NN indices file: {}'.format(f'\n\t\t{knn_indices_file}' if knn_indices_file is not None else 'None'))
+    print('\tk-NN files: {}'.format(('\n\t\t'+'\n\t\t'.join(knn_files)) if len(knn_files) > 0 else '[]'))
+    print('\tnormalized k-NN files: {}'.format(
+        ('\n\t\t'+'\n\t\t'.join(normalized_knn_files)) if len(normalized_knn_files) > 0 else '[]'
+    ))
+    print('\ttarget labels file: {}'.format(
+        f'\n\t\t{target_labels_file}' if target_labels_file is not None else 'None')
+    )
+
+    print('\nExpected k-NN indices file: {}'.format(
+        f'\n\t{expected_knn_indices_file}' if expected_knn_indices_file is not None else 'None'
+    ))
+
+    print('\nNormalized target instance file: {}'.format(
+        f'\n\t{normalized_target_instance_file}' if normalized_target_instance_file is not None else 'None'
+    ))
+
+    print(f'\nExecution times:')
+    print('\talgorithm execution time:    {:.10f} s'.format(algorithm_execution_time))
+    print('\tclassical expectation time:  {:.10f} s'.format(classical_expectation_time))
