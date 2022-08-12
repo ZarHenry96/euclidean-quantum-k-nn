@@ -178,32 +178,17 @@ def build_qknn_circuit(training_df, target_df, N, d, encoding, exec_type):
     return circuit, qubits_num, index_qubits_num, features_qubits_num, target_norm
 
 
-def get_probabilities_from_statevector(statevector, qubits_num, index_qubits_num):
-    # Prepare the data structures
-    p0, p1, index_and_ancillary_joint_p = 0.0, 0.0, {}
+def get_probabilities_from_statevector(statevector, index_qubits_num):
+    # Ancillary qubit
+    p0, p1 = statevector.probabilities([0])
+
+    # Joint index and ancillary qubits
+    index_and_ancillary_joint_p = {}
+    first_index_qubit = 2
+    joint_p = statevector.probabilities([0] + list(range(first_index_qubit, first_index_qubit + index_qubits_num)))
     for j in range(0, (2 ** index_qubits_num)):
         index_state = ('{0:0' + str(index_qubits_num) + 'b}').format(j)
-        index_and_ancillary_joint_p[index_state] = {'0': 0.0, '1': 0.0}
-
-    # Process the statevector, computing the probabilities of interest
-    for circuit_dec_state, state_amplitude in enumerate(statevector):
-        state_probability = np.abs(state_amplitude) ** 2
-
-        if circuit_dec_state % 2 == 0:
-            p0 += state_probability
-        else:
-            p1 += state_probability
-
-        circuit_state = ('{0:0' + str(qubits_num) + 'b}').format(circuit_dec_state)
-        index_state = circuit_state[qubits_num - (index_qubits_num + 2):-2]
-        ancillary_state = circuit_state[qubits_num - 1]
-        index_and_ancillary_joint_p[index_state][ancillary_state] += state_probability
-
-    # Round the resulting probability values to the 12th decimal place
-    for j in range(0, (2 ** index_qubits_num)):
-        index_state = ('{0:0' + str(index_qubits_num) + 'b}').format(j)
-        index_and_ancillary_joint_p[index_state]['0'] = round(index_and_ancillary_joint_p[index_state]['0'], 12)
-        index_and_ancillary_joint_p[index_state]['1'] = round(index_and_ancillary_joint_p[index_state]['1'], 12)
+        index_and_ancillary_joint_p[index_state] = {'0': joint_p[2 * j], '1': joint_p[2 * j + 1]}
 
     return p0, p1, index_and_ancillary_joint_p
 
@@ -391,7 +376,7 @@ def run_qknn(training_data_file, target_instance_file, k, exec_type, encoding, b
 
         # Process the output statevector
         p0, p1, index_and_ancillary_joint_p = \
-            get_probabilities_from_statevector(output_statevector, qubits_num, index_qubits_num)
+            get_probabilities_from_statevector(output_statevector, index_qubits_num)
     else:
         counts = result.get_counts(circuit)
         sorted_counts = {i: counts[i] for i in sorted(counts.keys())}
