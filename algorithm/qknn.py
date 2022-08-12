@@ -284,8 +284,8 @@ def extract_euclidean_distances(index_and_ancillary_joint_p, dist_estimates, N, 
 
 
 def run_qknn(training_data_file, target_instance_file, k, exec_type, encoding, backend_name, job_name, shots,
-             pseudocounts, dist_estimates, res_dir, classical_expectation=False, verbose=True, store_results=True,
-             save_circuit_plot=True):
+             pseudocounts, seed_simulator, seed_transpiler, dist_estimates, res_dir, classical_expectation=False,
+             verbose=True, store_results=True, save_circuit_plot=True):
     start_time = time.time()
 
     # Prepare the results directories
@@ -301,8 +301,8 @@ def run_qknn(training_data_file, target_instance_file, k, exec_type, encoding, b
 
         # Save the experiment configuration
         save_exp_config(res_dir, 'exp_config', training_data_file, target_instance_file, k, exec_type, encoding,
-                        backend_name, job_name, shots, pseudocounts, dist_estimates, classical_expectation, verbose,
-                        save_circuit_plot)
+                        backend_name, job_name, shots, pseudocounts, seed_simulator, seed_transpiler, dist_estimates,
+                        classical_expectation, verbose, save_circuit_plot)
 
     # Get the original training dataframe
     original_training_df = pd.read_csv(training_data_file, sep=',')
@@ -357,12 +357,16 @@ def run_qknn(training_data_file, target_instance_file, k, exec_type, encoding, b
             print('\nThe circuit plot is available at: {}\n'.format(circuit_filepath))
 
     # Execute the job
+    job = None
     if exec_type == 'statevector':
         job = execute(circuit, backend)
     elif exec_type == 'local_simulation':
-        job = execute(circuit, backend, shots=shots)
+        job = execute(circuit, backend, shots=shots, seed_simulator=seed_simulator)
     else:
-        job = execute(circuit, backend, shots=shots, job_name=job_name)
+        if exec_type == 'online_simulation':
+            job = execute(circuit, backend, shots=shots, seed_simulator=seed_simulator, job_name=job_name)
+        elif exec_type == 'quantum':
+            job = execute(circuit, backend, shots=shots, seed_transpiler=seed_transpiler, job_name=job_name)
 
         # Show and save the online Job information (if needed)
         if verbose:

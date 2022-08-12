@@ -31,6 +31,10 @@ if __name__ == '__main__':
                         help='number of shots (for simulations and quantum executions).')
     parser.add_argument('--pseudocounts', metavar='pseudocounts', type=int, nargs='?', default=0,
                         help='pseudocounts (for each index value) for Laplace smoothing.')
+    parser.add_argument('--seed-simulator', metavar='seed_simulator', type=int, nargs='?', default=None,
+                        help='simulator sampling seed (only for local and online simulations).')
+    parser.add_argument('--seed-transpiler', metavar='seed_transpiler', type=int, nargs='?', default=None,
+                        help='transpiler seed (only for quantum executions).')
     parser.add_argument('--dist-estimates', metavar='dist_estimates', type=str, nargs='+',
                         default=['avg'], help='list of Euclidian distance estimates used for k nearest neighbors '
                         ' extraction, allowed values: zero, one, avg, diff. The classical exec-type provides the '
@@ -71,7 +75,7 @@ if __name__ == '__main__':
     dist_estimates = args.dist_estimates
     for dist_estimate in dist_estimates:
         if dist_estimate not in ['zero', 'one', 'avg', 'diff']:
-            print(f"Unknown sorting dist. estimate '{dist_estimate}'", file=sys.stderr)
+            print(f"Unknown dist. estimate '{dist_estimate}'", file=sys.stderr)
             exit(-1)
 
     root_res_dir = args.res_dir if args.res_dir is not None \
@@ -82,8 +86,9 @@ if __name__ == '__main__':
     (knn_indices_file, knn_files, normalized_knn_files, target_labels_file), expected_knn_indices_file, \
     normalized_target_instance_file, (algorithm_execution_time, classical_expectation_time) = \
         run_qknn(args.training_data_file, args.target_instance_file, args.k, exec_type, encoding, backend_name,
-                 job_name, args.shots, args.pseudocounts, dist_estimates, res_dir, args.classical_expectation,
-                 not args.not_verbose, not args.not_store, not args.not_save_circuit_plot)
+                 job_name, args.shots, args.pseudocounts, args.seed_simulator, args.seed_transpiler, dist_estimates,
+                 res_dir, args.classical_expectation, not args.not_verbose, not args.not_store,
+                 not args.not_save_circuit_plot)
 
     if not args.not_verbose:
         print('\n\n' + '=' * 120 + '\n\n')

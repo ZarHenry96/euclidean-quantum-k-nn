@@ -14,8 +14,8 @@ def save_data_to_json_file(res_dir, filename, data):
 
 
 def save_exp_config(res_dir, filename, training_data_file, target_instance_file, k, exec_type, encoding,
-                    backend_name, job_name, shots, pseudocounts, dist_estimates, classical_expectation,
-                    verbose, save_circuit_plot):
+                    backend_name, job_name, shots, pseudocounts, seed_simulator, seed_transpiler, dist_estimates,
+                    classical_expectation, verbose, save_circuit_plot):
     config = {
         'training_data': training_data_file,
         'target_data': target_instance_file,
@@ -26,7 +26,9 @@ def save_exp_config(res_dir, filename, training_data_file, target_instance_file,
         'job_name': job_name,
         'shots': shots,
         'pseudocounts': pseudocounts,
-        'sorting_dist_estimates': dist_estimates,
+        'seed_simulator': seed_simulator,
+        'seed_transpiler': seed_transpiler,
+        'dist_estimates': dist_estimates,
         'res_dir': res_dir,
         'classical_expectation': classical_expectation,
         'verbose': verbose,
