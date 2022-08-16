@@ -94,11 +94,12 @@ def run_fold(config, dataset, train, test, i, fold_res_dir, res_file, pool):
         with open(test_instance_label_filepath, 'w') as test_instance_label_file:
             test_instance_label_file.write(str(test_instance_label))
 
+        job_name = None if config['knn']['job_name_prefix'] is None \
+            else '{}_f{}_t{}'.format(config['knn']['job_name_prefix'], i, j)
         test_config = {
             'training_data': training_data_file,
             'test_instance': test_instance_no_label_file,
-            'job_name': None if config['knn']['job_name_prefix'] is None
-                             else '{}_f{}_t{}'.format(config['knn']['job_name_prefix'], i, j),
+            'job_name': job_name,
             'res_dir': test_j_res_dir,
             'classical_expectation': config['eval_nearest_neighbors'],
             'verbose': False,
