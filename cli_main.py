@@ -83,7 +83,7 @@ if __name__ == '__main__':
     res_dir = os.path.join(root_res_dir, exec_type, encoding if exec_type != 'classical' else '',
                            datetime.now().strftime('%d-%m-%Y_%H-%M-%S'))
 
-    (knn_indices_file, knn_files, normalized_knn_files, target_labels_file), expected_knn_indices_file, \
+    (knn_indices_file, knn_files, normalized_knn_files, target_label_file), expected_knn_indices_file, \
     normalized_target_instance_file, (algorithm_execution_time, classical_expectation_time) = \
         run_qknn(args.training_data_file, args.target_instance_file, args.k, exec_type, encoding, backend_name,
                  job_name, args.shots, args.pseudocounts, args.seed_simulator, args.seed_transpiler, dist_estimates,
@@ -100,7 +100,7 @@ if __name__ == '__main__':
         ('\n\t\t'+'\n\t\t'.join(normalized_knn_files)) if len(normalized_knn_files) > 0 else '[]'
     ))
     print('\ttarget labels file: {}'.format(
-        f'\n\t\t{target_labels_file}' if target_labels_file is not None else 'None')
+        f'\n\t\t{target_label_file}' if target_label_file is not None else 'None')
     )
 
     print('\nExpected k-NN indices file: {}'.format(

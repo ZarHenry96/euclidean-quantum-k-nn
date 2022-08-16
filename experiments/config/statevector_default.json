@@ -1,0 +1,22 @@
+{
+  "dataset": "",
+  "class_mapping": "",
+  "k_folds": 5,
+  "k_fold_random_state": 17,
+  "res_dir": "",
+  "eval_nearest_neighbors": true,
+  "knn": {
+    "k": 5,
+    "exec_type": "statevector",
+    "encoding": "extension",
+    "backend_name": null,
+    "job_name_prefix": null,
+    "shots": null,
+    "pseudocounts": null,
+    "seed_simulator": null,
+    "seed_transpiler": null,
+    "dist_estimates": ["avg", "diff"],
+    "save_circuit_plot": true
+  },
+  "num_processes": 4
+}

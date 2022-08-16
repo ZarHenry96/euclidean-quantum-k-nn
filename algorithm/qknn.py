@@ -280,12 +280,12 @@ def run_qknn(training_data_file, target_instance_file, k, exec_type, encoding, b
     if store_results:
         os.makedirs(res_dir, exist_ok=True)
         if classical_expectation:
-            os.makedirs(res_c_expectation_dir, exist_ok=True)
-        os.makedirs(res_input_dir, exist_ok=True)
-        os.makedirs(res_output_dir, exist_ok=True)
+            os.makedirs(res_c_expectation_dir)
+        os.makedirs(res_input_dir)
+        os.makedirs(res_output_dir)
 
         # Save the experiment configuration
-        save_exp_config(res_dir, 'exp_config', training_data_file, target_instance_file, k, exec_type, encoding,
+        save_exp_config(res_dir, 'config', training_data_file, target_instance_file, k, exec_type, encoding,
                         backend_name, job_name, shots, pseudocounts, seed_simulator, seed_transpiler, dist_estimates,
                         classical_expectation, verbose, save_circuit_plot)
 
