@@ -7,21 +7,21 @@ import pandas as pd
 import shutil
 import sys
 import tarfile
+import time
 
 from sklearn.model_selection import StratifiedKFold
 from algorithm.qknn import run_qknn
 
 
-def preprocess_experiment_config(config, config_filepath):
+def preprocess_experiment_config(config):
     if not os.path.isabs(config['dataset']):
-        config['dataset'] = os.path.abspath(os.path.join(os.path.dirname(config_filepath), config['dataset']))
+        config['dataset'] = os.path.abspath(config['dataset'])
 
-    if 'class_mapping' in config and not os.path.isabs(config['class_mapping']):
-        config['class_mapping'] = \
-            os.path.abspath(os.path.join(os.path.dirname(config_filepath), config['class_mapping']))
+    if config['class_mapping'] is not None and not os.path.isabs(config['class_mapping']):
+        config['class_mapping'] = os.path.abspath(config['class_mapping'])
 
     if not os.path.isabs(config['res_dir']):
-        config['res_dir'] = os.path.abspath(os.path.join(os.path.dirname(config_filepath), config['res_dir']))
+        config['res_dir'] = os.path.abspath(config['res_dir'])
 
 
 def print_config_dict(d, level=0):
@@ -39,7 +39,7 @@ def run_test(test_config):
 
     # Run the algorithm
     (predicted_knn_indices_filepath, _, _, predicted_label_filepath), expected_knn_indices_filepath, _, \
-    (algorithm_exec_time, _) = \
+    (algorithm_exec_time, classical_exp_exec_time) = \
         run_qknn(test_config['training_data'], test_config['test_instance'], test_config['k'],
                  test_config['exec_type'], test_config['encoding'], test_config['backend_name'],
                  test_config['job_name'], test_config['shots'], test_config['pseudocounts'],
@@ -60,7 +60,7 @@ def run_test(test_config):
         with open(expected_knn_indices_filepath) as expected_knn_indices_file:
             expected_knn_indices = json.load(expected_knn_indices_file)['exact']
 
-    return predicted_knn_indices, predicted_label, expected_knn_indices, algorithm_exec_time
+    return predicted_knn_indices, predicted_label, expected_knn_indices, (algorithm_exec_time, classical_exp_exec_time)
 
 
 def list_to_csv_field(values_list):
@@ -68,6 +68,9 @@ def list_to_csv_field(values_list):
 
 
 def run_fold(config, dataset, train, test, i, fold_res_dir, res_file, pool):
+    print('Fold {} ...'.format(i), end='')
+    fold_start_time = time.time()
+
     # Save the training set and the test set for the current fold
     training_data_file = os.path.join(fold_res_dir, 'training_data.csv')
     dataset.iloc[train].to_csv(training_data_file, index=False)
@@ -111,28 +114,38 @@ def run_fold(config, dataset, train, test, i, fold_res_dir, res_file, pool):
         test_configs.append(test_config)
 
     # Parallel execution
-    print('Fold {} ...'.format(i), end='')
     results = pool.map(run_test, test_configs)
-    print('\tDone')
 
     # Save the fold results
-    for j, (exp_label, (pred_knn_indices, pred_label, exp_knn_indices, algorithm_exec_time)) \
+    for j, (exp_label, (pred_knn_indices, pred_label, exp_knn_indices, (alg_exec_time, cl_exp_exec_time))) \
             in enumerate(zip(expected_labels, results)):
         res_file.write('{},{},{},{}'.format(i, j, exp_label, ','.join([str(l_val) for l_val in pred_label.values()])))
         if config['eval_nearest_neighbors']:
             res_file.write(f',{list_to_csv_field(exp_knn_indices)},')
-            pred_indices = list_to_csv_field(pred_knn_indices) if len(config['dist_estimates']) == 1 \
+            pred_indices = list_to_csv_field(pred_knn_indices) if len(config['knn']['dist_estimates']) == 1 \
                 else ','.join([list_to_csv_field(indices_list) for indices_list in pred_knn_indices.values()])
             res_file.write(pred_indices)
+        res_file.write(',{:.5f}'.format(alg_exec_time))
+        if config['eval_nearest_neighbors']:
+            res_file.write(',{:.5f}'.format(cl_exp_exec_time))
         res_file.write('\n')
+
+    # Save the execution time of the current fold
+    fold_exec_time = time.time() - fold_start_time
+    with open(os.path.join(fold_res_dir, 'fold_execution_time.txt'), 'w') as fold_exec_time_file:
+        fold_exec_time_file.write('{:.5f} s\n'.format(fold_exec_time))
 
     # Compress fold results and delete the original directory
     with tarfile.open('{}.tar.gz'.format(fold_res_dir), 'w:gz') as tar_file:
         tar_file.add(fold_res_dir, arcname=os.path.basename(fold_res_dir))
     shutil.rmtree(fold_res_dir)
 
+    print('\tDone')
+
 
 def run(config):
+    start_time = time.time()
+    
     # Show the experiment configuration
     print('Experiment Configuration\n')
     print_config_dict(config)
@@ -151,7 +164,7 @@ def run(config):
     shutil.copy2(config['dataset'], res_dir)
 
     # Copy the class mapping file (if present)
-    if 'class_mapping' in config:
+    if config['class_mapping'] is not None:
         shutil.copy2(config['class_mapping'], res_dir)
 
     # Instantiate some useful variables
@@ -164,13 +177,17 @@ def run(config):
         predicted_label_columns = 'predicted_label' if len(dist_estimates) == 1 \
             else ','.join([f'predicted_label_{dist_estimate}' for dist_estimate in dist_estimates])
 
-        knn_indices_columns = ''
+        knn_indices_columns, cl_exp_exec_time_column = '', ''
         if eval_nearest_neighbors:
             knn_indices_columns += ',expected_knn_indices,'
             knn_indices_columns += 'predicted_knn_indices' if len(dist_estimates) == 1 \
                 else ','.join([f'predicted_knn_indices_{dist_estimate}' for dist_estimate in dist_estimates])
 
-        res_file.write('fold,test,expected_label,{}{}\n'.format(predicted_label_columns, knn_indices_columns))
+            cl_exp_exec_time_column = ',classical_exp_exec_time'
+
+        res_file.write('fold,test,expected_label,{}{},algorithm_exec_time{}\n'.format(
+            predicted_label_columns, knn_indices_columns, cl_exp_exec_time_column
+        ))
 
         # K-fold cross-validation
         kf = StratifiedKFold(n_splits=config['k_folds'], shuffle=True, random_state=config['k_fold_random_state'])
@@ -194,6 +211,12 @@ def run(config):
 
     print('\n')
     # TODO: process_exp_results(res_filename, dist_estimates)
+    
+    # Show and save the execution time
+    exec_time = time.time() - start_time
+    print('Execution time: {:.5f} s'.format(exec_time))
+    with open(os.path.join(res_dir, 'execution_time.txt'), 'w') as exec_time_file:
+        exec_time_file.write('{:.5f} s\n'.format(exec_time))
 
 
 if __name__ == '__main__':
@@ -207,5 +230,5 @@ if __name__ == '__main__':
     if config_filepath is not None:
         with open(config_filepath) as config_file:
             config = json.load(config_file)
-            preprocess_experiment_config(config, config_filepath)
+            preprocess_experiment_config(config)
             run(config)

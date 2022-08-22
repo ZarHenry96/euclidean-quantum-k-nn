@@ -307,7 +307,7 @@ def run_qknn(training_data_file, target_instance_file, k, exec_type, encoding, b
                      expectation=True, verbose=verbose, store_results=store_results)
 
     # Compute the time required by the classical expectation
-    classical_expectation_time = time.time() - classical_expectation_start_time
+    classical_expectation_execution_time = time.time() - classical_expectation_start_time
 
     # If it is a classical execution, run the classical k-NN and exit
     if exec_type == 'classical':
@@ -319,11 +319,11 @@ def run_qknn(training_data_file, target_instance_file, k, exec_type, encoding, b
         normalized_knn_out_files = [normalized_knn_out_file] if normalized_knn_out_file is not None else []
 
         # Compute the execution time of the algorithm w/o the time required by the classical expectation
-        algorithm_execution_time = (time.time() - start_time) - classical_expectation_time
+        algorithm_execution_time = (time.time() - start_time) - classical_expectation_execution_time
 
         return (knn_indices_out_file, knn_out_files, normalized_knn_out_files, target_label_out_file), \
                expected_knn_indices_out_file, normalized_target_instance_file, \
-               (algorithm_execution_time, classical_expectation_time)
+               (algorithm_execution_time, classical_expectation_execution_time)
 
     # Select the backend for the execution
     backend = select_backend(exec_type, backend_name)
@@ -446,8 +446,8 @@ def run_qknn(training_data_file, target_instance_file, k, exec_type, encoding, b
         target_label_out_file = save_data_to_json_file(res_output_dir, 'target_label', target_labels_dict)
 
     # Compute the execution time of the algorithm w/o the time required by the classical expectation
-    algorithm_execution_time = (time.time() - start_time) - classical_expectation_time
+    algorithm_execution_time = (time.time() - start_time) - classical_expectation_execution_time
 
     return (knn_indices_out_file, knn_out_files, normalized_knn_out_files, target_label_out_file), \
            expected_knn_indices_out_file, normalized_target_instance_file, \
-           (algorithm_execution_time, classical_expectation_time)
+           (algorithm_execution_time, classical_expectation_execution_time)
