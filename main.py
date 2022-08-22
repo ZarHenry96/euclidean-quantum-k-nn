@@ -1,7 +1,6 @@
 import argparse
 import copy
 import json
-import multiprocessing
 import os
 import pandas as pd
 import shutil
@@ -10,6 +9,8 @@ import tarfile
 import time
 
 from sklearn.model_selection import StratifiedKFold
+from tqdm.contrib.concurrent import process_map
+
 from algorithm.qknn import run_qknn
 
 
@@ -67,8 +68,8 @@ def list_to_csv_field(values_list):
     return '[' + ' '.join([str(value) for value in values_list]) + ']'
 
 
-def run_fold(config, dataset, train, test, i, fold_res_dir, res_file, pool):
-    print('Fold {} ...'.format(i), end='')
+def run_fold(config, dataset, train, test, i, fold_res_dir, res_file):
+    print('Fold {}'.format(i))
     fold_start_time = time.time()
 
     # Save the training set and the test set for the current fold
@@ -83,6 +84,7 @@ def run_fold(config, dataset, train, test, i, fold_res_dir, res_file, pool):
     os.makedirs(test_instances_no_label_dir)
 
     # Prepare test directories, files and configs
+    eval_nearest_neighbors = config['eval_nearest_neighbors']
     expected_labels = []
     test_configs = []
     for j in range(0, len(test)):
@@ -104,7 +106,7 @@ def run_fold(config, dataset, train, test, i, fold_res_dir, res_file, pool):
             'test_instance': test_instance_no_label_file,
             'job_name': job_name,
             'res_dir': test_j_res_dir,
-            'classical_expectation': config['eval_nearest_neighbors'],
+            'classical_expectation': eval_nearest_neighbors,
             'verbose': False,
             'store_results': True
         }
@@ -114,19 +116,19 @@ def run_fold(config, dataset, train, test, i, fold_res_dir, res_file, pool):
         test_configs.append(test_config)
 
     # Parallel execution
-    results = pool.map(run_test, test_configs)
+    results = process_map(run_test, test_configs, max_workers=config['num_processes'])
 
     # Save the fold results
     for j, (exp_label, (pred_knn_indices, pred_label, exp_knn_indices, (alg_exec_time, cl_exp_exec_time))) \
             in enumerate(zip(expected_labels, results)):
         res_file.write('{},{},{},{}'.format(i, j, exp_label, ','.join([str(l_val) for l_val in pred_label.values()])))
-        if config['eval_nearest_neighbors']:
+        if eval_nearest_neighbors:
             res_file.write(f',{list_to_csv_field(exp_knn_indices)},')
             pred_indices = list_to_csv_field(pred_knn_indices) if len(config['knn']['dist_estimates']) == 1 \
                 else ','.join([list_to_csv_field(indices_list) for indices_list in pred_knn_indices.values()])
             res_file.write(pred_indices)
         res_file.write(',{:.5f}'.format(alg_exec_time))
-        if config['eval_nearest_neighbors']:
+        if eval_nearest_neighbors:
             res_file.write(',{:.5f}'.format(cl_exp_exec_time))
         res_file.write('\n')
 
@@ -140,7 +142,7 @@ def run_fold(config, dataset, train, test, i, fold_res_dir, res_file, pool):
         tar_file.add(fold_res_dir, arcname=os.path.basename(fold_res_dir))
     shutil.rmtree(fold_res_dir)
 
-    print('\tDone')
+    print()
 
 
 def run(config):
@@ -201,15 +203,13 @@ def run(config):
         with open(os.path.join(res_dir, 'training_test_splits.json'), 'w') as tts_file:
             json.dump(training_test_splits, tts_file, ensure_ascii=False)
 
-        with multiprocessing.Pool(processes=config['num_processes']) as pool:
-            # Iterate over folds
-            for i, (train, test) in enumerate(training_test_splits):
-                fold_i_res_dir = os.path.join(res_dir, 'fold_{}'.format(i))
-                os.makedirs(fold_i_res_dir)
+        # Iterate over folds
+        for i, (train, test) in enumerate(training_test_splits):
+            fold_i_res_dir = os.path.join(res_dir, 'fold_{}'.format(i))
+            os.makedirs(fold_i_res_dir)
 
-                run_fold(config, dataset, train, test, i, fold_i_res_dir, res_file, pool)
+            run_fold(config, dataset, train, test, i, fold_i_res_dir, res_file)
 
-    print('\n')
     # TODO: process_exp_results(res_filename, dist_estimates)
     
     # Show and save the execution time
