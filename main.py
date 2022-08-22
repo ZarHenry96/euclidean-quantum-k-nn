@@ -119,17 +119,25 @@ def run_fold(config, dataset, train, test, i, fold_res_dir, res_file):
     results = process_map(run_test, test_configs, max_workers=config['num_processes'])
 
     # Save the fold results
+    dist_estimates = config['knn']['dist_estimates']
     for j, (exp_label, (pred_knn_indices, pred_label, exp_knn_indices, (alg_exec_time, cl_exp_exec_time))) \
             in enumerate(zip(expected_labels, results)):
-        res_file.write('{},{},{},{}'.format(i, j, exp_label, ','.join([str(l_val) for l_val in pred_label.values()])))
+        res_file.write('{},{},{},{}'.format(
+            i, j, exp_label, ','.join([str(pred_label[dist_estimate]) for dist_estimate in dist_estimates]))
+        )
+
         if eval_nearest_neighbors:
             res_file.write(f',{list_to_csv_field(exp_knn_indices)},')
-            pred_indices = list_to_csv_field(pred_knn_indices) if len(config['knn']['dist_estimates']) == 1 \
-                else ','.join([list_to_csv_field(indices_list) for indices_list in pred_knn_indices.values()])
+
+            pred_indices = list_to_csv_field(pred_knn_indices) if len(dist_estimates) == 1 \
+                else ','.join([list_to_csv_field(pred_knn_indices[dist_estimate]) for dist_estimate in dist_estimates])
             res_file.write(pred_indices)
+
         res_file.write(',{:.5f}'.format(alg_exec_time))
+
         if eval_nearest_neighbors:
             res_file.write(',{:.5f}'.format(cl_exp_exec_time))
+        
         res_file.write('\n')
 
     # Save the execution time of the current fold
