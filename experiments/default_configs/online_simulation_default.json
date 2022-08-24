@@ -1,0 +1,22 @@
+{
+  "dataset": "data/datasets/01_iris_versicolor_virginica.csv",
+  "class_mapping": "data/datasets/01_iris_versicolor_virginica_class_mapping.json",
+  "k_folds": 5,
+  "k_fold_random_state": 7,
+  "res_dir": "results/default/01_iris_versicolor_virginica_k_5_online_simulation",
+  "eval_nearest_neighbors": true,
+  "knn": {
+    "k": 5,
+    "exec_type": "online_simulation",
+    "encoding": "extension",
+    "backend_name": "ibmq_qasm_simulator",
+    "job_name_prefix": "qknn_online_sim",
+    "shots": 1024,
+    "pseudocounts": 10,
+    "seed_simulator": 101,
+    "seed_transpiler": null,
+    "dist_estimates": ["avg", "diff"],
+    "save_circuit_plot": true
+  },
+  "num_processes": 5
+}
