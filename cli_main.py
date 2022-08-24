@@ -36,8 +36,8 @@ if __name__ == '__main__':
     parser.add_argument('--seed-transpiler', metavar='seed_transpiler', type=int, nargs='?', default=None,
                         help='transpiler seed (only for quantum executions).')
     parser.add_argument('--dist-estimates', metavar='dist_estimates', type=str, nargs='+',
-                        default=['avg'], help='list of Euclidian distance estimates used for k nearest neighbors '
-                        ' extraction, allowed values: zero, one, avg, diff. The classical exec-type provides the '
+                        default=['avg'], help='list of Euclidean distance estimates used for k nearest neighbors '
+                        ' extraction, allowed values: zero, one, avg, diff. The \'classical\' exec-type provides the '
                         '\'exact\' values.')
     parser.add_argument('--res-dir', metavar='res_dir', type=str, nargs='?', default=None,
                         help='directory where to store the results.')

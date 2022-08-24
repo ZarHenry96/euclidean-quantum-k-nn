@@ -12,6 +12,7 @@ from sklearn.model_selection import StratifiedKFold
 from tqdm.contrib.concurrent import process_map
 
 from algorithm.qknn import run_qknn
+from postprocessing.process_results import process_results
 
 
 def preprocess_experiment_config(config):
@@ -23,6 +24,10 @@ def preprocess_experiment_config(config):
 
     if not os.path.isabs(config['res_dir']):
         config['res_dir'] = os.path.abspath(config['res_dir'])
+
+    # If it is a classical execution, overwrite the dist_estimates field
+    if config['knn']['exec_type'] == 'classical':
+        config['knn']['dist_estimates'] = ['exact']
 
 
 def print_config_dict(d, level=0):
@@ -59,7 +64,7 @@ def run_test(test_config):
 
     if test_config['classical_expectation']:
         with open(expected_knn_indices_filepath) as expected_knn_indices_file:
-            expected_knn_indices = json.load(expected_knn_indices_file)['exact']
+            expected_knn_indices = json.load(expected_knn_indices_file)
 
     return predicted_knn_indices, predicted_label, expected_knn_indices, (algorithm_exec_time, classical_exp_exec_time)
 
@@ -122,22 +127,21 @@ def run_fold(config, dataset, train, test, i, fold_res_dir, res_file):
     dist_estimates = config['knn']['dist_estimates']
     for j, (exp_label, (pred_knn_indices, pred_label, exp_knn_indices, (alg_exec_time, cl_exp_exec_time))) \
             in enumerate(zip(expected_labels, results)):
-        res_file.write('{},{},{},{}'.format(
+        res_file.write('{},{},{},{},'.format(
             i, j, exp_label, ','.join([str(pred_label[dist_estimate]) for dist_estimate in dist_estimates]))
         )
 
         if eval_nearest_neighbors:
-            res_file.write(f',{list_to_csv_field(exp_knn_indices)},')
+            res_file.write('{},{},'.format(
+                list_to_csv_field(exp_knn_indices['exact']),
+                ','.join([list_to_csv_field(pred_knn_indices[dist_estimate]) for dist_estimate in dist_estimates])
+            ))
 
-            pred_indices = list_to_csv_field(pred_knn_indices) if len(dist_estimates) == 1 \
-                else ','.join([list_to_csv_field(pred_knn_indices[dist_estimate]) for dist_estimate in dist_estimates])
-            res_file.write(pred_indices)
-
-        res_file.write(',{:.5f}'.format(alg_exec_time))
+        res_file.write('{:.5f}'.format(alg_exec_time))
 
         if eval_nearest_neighbors:
             res_file.write(',{:.5f}'.format(cl_exp_exec_time))
-        
+
         res_file.write('\n')
 
     # Save the execution time of the current fold
@@ -181,8 +185,8 @@ def run(config):
     dist_estimates, eval_nearest_neighbors = config['knn']['dist_estimates'], config['eval_nearest_neighbors']
 
     # Create the results file
-    res_filename = os.path.join(res_dir, 'results.csv')
-    with open(res_filename, 'w') as res_file:
+    res_filepath = os.path.join(res_dir, 'results.csv')
+    with open(res_filepath, 'w') as res_file:
         # Prepare and write the header
         predicted_label_columns = 'predicted_label' if len(dist_estimates) == 1 \
             else ','.join([f'predicted_label_{dist_estimate}' for dist_estimate in dist_estimates])
@@ -218,11 +222,13 @@ def run(config):
 
             run_fold(config, dataset, train, test, i, fold_i_res_dir, res_file)
 
-    # TODO: process_exp_results(res_filename, dist_estimates)
-    
+    # Process the results
+    print('\nResults')
+    process_results(res_filepath, dist_estimates, eval_nearest_neighbors)
+
     # Show and save the execution time
     exec_time = time.time() - start_time
-    print('Execution time: {:.5f} s'.format(exec_time))
+    print('\nExecution time: {:.5f} s'.format(exec_time))
     with open(os.path.join(res_dir, 'execution_time.txt'), 'w') as exec_time_file:
         exec_time_file.write('{:.5f} s\n'.format(exec_time))
 
