@@ -1,8 +1,8 @@
 {
   "dataset": "data/datasets/01_iris_versicolor_virginica.csv",
   "class_mapping": "data/datasets/01_iris_versicolor_virginica_class_mapping.json",
-  "k_folds": 5,
-  "k_fold_random_state": 7,
+  "folds_number": 5,
+  "k_fold_random_seed": 7,
   "res_dir": "results/default/01_iris_versicolor_virginica_k_5_statevector",
   "eval_nearest_neighbors": true,
   "knn": {

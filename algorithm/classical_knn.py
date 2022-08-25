@@ -14,7 +14,7 @@ def print_cknn_results(N, sorted_indices, sorted_distances, k, normalized_knn_df
     index_max_chars = str(len(str(N)))
     for i, (index, distance) in enumerate(zip(sorted_indices, sorted_distances)):
         if i == k:
-            print('\t' + '-' * 32, file=file)
+            print('\t' + '-' * 71, file=file)
         print(('\tindex: {:'+index_max_chars+'d}, distance: {:.10f}').format(index, distance), file=file)
 
     print(f'\nThe normalized {k} nearest neighbors are:', file=file)

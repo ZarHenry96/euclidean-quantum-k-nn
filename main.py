@@ -204,7 +204,7 @@ def run(config):
         ))
 
         # K-fold cross-validation
-        kf = StratifiedKFold(n_splits=config['k_folds'], shuffle=True, random_state=config['k_fold_random_state'])
+        kf = StratifiedKFold(n_splits=config['folds_number'], shuffle=True, random_state=config['k_fold_random_seed'])
         columns = len(dataset.columns)
         training_test_splits = [
             (train.tolist(), test.tolist())
