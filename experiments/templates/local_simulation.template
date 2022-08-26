@@ -1,9 +1,9 @@
 {
   "dataset": "${dataset}",
-  "class_mapping": "${class_mapping}",
+  "class_mapping": ${class_mapping},
   "folds_number": ${folds_number},
   "k_fold_random_seed": ${k_fold_random_seed},
-  "res_dir": "{res_dir}",
+  "res_dir": "${res_dir}",
   "eval_nearest_neighbors": ${eval_nn},
   "knn": {
     "k": ${k},

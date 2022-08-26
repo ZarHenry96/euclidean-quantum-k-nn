@@ -25,8 +25,9 @@ def preprocess_experiment_config(config):
     if not os.path.isabs(config['res_dir']):
         config['res_dir'] = os.path.abspath(config['res_dir'])
 
-    # If it is a classical execution, overwrite the dist_estimates field
+    # If it is a classical execution, overwrite the encoding field and the dist_estimates field
     if config['knn']['exec_type'] == 'classical':
+        config['knn']['encoding'] = 'classical'
         config['knn']['dist_estimates'] = ['exact']
 
 

@@ -21,7 +21,8 @@ if __name__ == '__main__':
                         help='type of execution, allowed values: classical, statevector, local_simulation,'
                              'online_simulation, quantum.')
     parser.add_argument('--encoding', metavar='encoding', type=str, nargs='?', default='extension',
-                        help='type of samples encoding, allowed values: extension, translation.')
+                        help='type of samples encoding, allowed values: extension, translation. The \'classical\' '
+                             'exec-type uses a \'classical\' encoding.')
     parser.add_argument('--backend-name', metavar='backend_name', type=str, nargs='?',
                         default='ibmq_qasm_simulator|ibm_nairobi',
                         help='name of the online backend, either an online simulator or a quantum device.')
@@ -38,7 +39,7 @@ if __name__ == '__main__':
     parser.add_argument('--dist-estimates', metavar='dist_estimates', type=str, nargs='+',
                         default=['avg'], help='list of Euclidean distance estimates used for k nearest neighbors '
                         ' extraction, allowed values: zero, one, avg, diff. The \'classical\' exec-type provides the '
-                        '\'exact\' values.')
+                        '\'exact\' estimate.')
     parser.add_argument('--res-dir', metavar='res_dir', type=str, nargs='?', default=None,
                         help='directory where to store the results.')
     parser.add_argument('--classical-expectation', dest='classical_expectation', action='store_const',
@@ -80,7 +81,7 @@ if __name__ == '__main__':
 
     root_res_dir = args.res_dir if args.res_dir is not None \
         else os.path.join('./', os.path.dirname(sys.argv[0]), 'results')
-    res_dir = os.path.join(root_res_dir, exec_type, encoding if exec_type != 'classical' else '',
+    res_dir = os.path.join(root_res_dir, exec_type, encoding if exec_type != 'classical' else 'classical',
                            datetime.now().strftime('%d-%m-%Y_%H-%M-%S'))
 
     (knn_indices_file, knn_files, normalized_knn_files, target_label_file), expected_knn_indices_file, \

@@ -8,7 +8,7 @@
   "knn": {
     "k": 5,
     "exec_type": "classical",
-    "encoding": null,
+    "encoding": "classical",
     "backend_name": null,
     "job_name_prefix": null,
     "shots": null,
