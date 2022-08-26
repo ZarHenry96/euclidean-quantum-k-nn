@@ -13,7 +13,7 @@ from scipy.stats import mode
 
 from algorithm.classical_knn import run_cknn
 from algorithm.utils import save_exp_config, select_backend, save_data_to_txt_file, save_data_to_json_file, \
-    print_qknn_results, save_qknn_log, save_probabilities_and_distances
+    print_qknn_results, save_qknn_log, save_qknn_probabilities_and_distances
 
 
 def load_and_normalize_data(training_data_file, target_instance_file, res_input_dir, verbose=True, store=True):
@@ -386,7 +386,7 @@ def run_qknn(training_data_file, target_instance_file, k, exec_type, encoding, b
             print('\nResults\n\nCircuit output counts (w/o Laplace smoothing): {}'.format(sorted_counts))
             print('\n[Shots = {}, Pseudocounts (per index state) = {}]'.format(shots, pseudocounts))
         if store_results:
-            save_data_to_json_file(res_output_dir, 'qknn_counts', sorted_counts)
+            save_data_to_json_file(res_output_dir, 'qknn_counts', sorted_counts, indent=4)
 
         # Process counts
         p0, p1, index_and_ancillary_joint_p = \
@@ -423,8 +423,8 @@ def run_qknn(training_data_file, target_instance_file, k, exec_type, encoding, b
         save_qknn_log(res_output_dir, 'qknn_log', p0, p1, index_qubits_num, index_and_ancillary_joint_p,
                       euclidean_distances, dist_estimates, sorted_indices_lists, k, normalized_knn_dfs, target_labels)
 
-        save_probabilities_and_distances(res_output_dir, 'qknn_probabilities_and_distances',
-                                         index_and_ancillary_joint_p, euclidean_distances, N)
+        save_qknn_probabilities_and_distances(res_output_dir, 'qknn_probabilities_and_distances',
+                                              index_and_ancillary_joint_p, euclidean_distances, N)
 
         knn_indices_dict = {dist_estimate: sorted_indices[0: k]
                             for dist_estimate, sorted_indices in zip(dist_estimates, sorted_indices_lists)}

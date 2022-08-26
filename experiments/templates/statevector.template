@@ -1,22 +1,22 @@
 {
-  "dataset": "${dataset}",
-  "class_mapping": ${class_mapping},
-  "folds_number": ${folds_number},
-  "k_fold_random_seed": ${k_fold_random_seed},
-  "res_dir": "${res_dir}",
-  "eval_nearest_neighbors": ${eval_nn},
-  "knn": {
-    "k": ${k},
-    "exec_type": "statevector",
-    "encoding": "${encoding}",
-    "backend_name": null,
-    "job_name_prefix": null,
-    "shots": null,
-    "pseudocounts": null,
-    "seed_simulator": null,
-    "seed_transpiler": null,
-    "dist_estimates": [${dist_estimates}],
-    "save_circuit_plot": ${save_circ_plot}
-  },
-  "num_processes": ${num_processes}
+    "dataset": "${dataset}",
+    "class_mapping": ${class_mapping},
+    "folds_number": ${folds_number},
+    "k_fold_random_seed": ${k_fold_random_seed},
+    "res_dir": "${res_dir}",
+    "eval_nearest_neighbors": ${eval_nn},
+    "knn": {
+        "k": ${k},
+        "exec_type": "statevector",
+        "encoding": "${encoding}",
+        "backend_name": null,
+        "job_name_prefix": null,
+        "shots": null,
+        "pseudocounts": null,
+        "seed_simulator": null,
+        "seed_transpiler": null,
+        "dist_estimates": [${dist_estimates}],
+        "save_circuit_plot": ${save_circ_plot}
+    },
+    "num_processes": ${num_processes}
 }

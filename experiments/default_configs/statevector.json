@@ -1,22 +1,25 @@
 {
-  "dataset": "data/datasets/01_iris_versicolor_virginica.csv",
-  "class_mapping": "data/datasets/01_iris_versicolor_virginica_class_mapping.json",
-  "folds_number": 5,
-  "k_fold_random_seed": 7,
-  "res_dir": "results/default/01_iris_versicolor_virginica_k_5_statevector",
-  "eval_nearest_neighbors": true,
-  "knn": {
-    "k": 5,
-    "exec_type": "statevector",
-    "encoding": "extension",
-    "backend_name": null,
-    "job_name_prefix": null,
-    "shots": null,
-    "pseudocounts": null,
-    "seed_simulator": null,
-    "seed_transpiler": null,
-    "dist_estimates": ["avg", "diff"],
-    "save_circuit_plot": true
-  },
-  "num_processes": 5
+    "dataset": "data/datasets/01_iris_versicolor_virginica.csv",
+    "class_mapping": "data/datasets/01_iris_versicolor_virginica_class_mapping.json",
+    "folds_number": 5,
+    "k_fold_random_seed": 7,
+    "res_dir": "results/default/01_iris_versicolor_virginica_k_5_statevector",
+    "eval_nearest_neighbors": true,
+    "knn": {
+        "k": 5,
+        "exec_type": "statevector",
+        "encoding": "extension",
+        "backend_name": null,
+        "job_name_prefix": null,
+        "shots": null,
+        "pseudocounts": null,
+        "seed_simulator": null,
+        "seed_transpiler": null,
+        "dist_estimates": [
+            "avg",
+            "diff"
+        ],
+        "save_circuit_plot": true
+    },
+    "num_processes": 5
 }

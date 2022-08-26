@@ -5,44 +5,7 @@ import numpy as np
 import os
 import pandas as pd
 
-
-class MyJSONEncoder(json.JSONEncoder):
-    def __init__(self, *args, **kwargs):
-        super(MyJSONEncoder, self).__init__(*args, **kwargs)
-        self.current_indent = 0
-        self.current_indent_str = ""
-
-    def encode(self, obj):
-        if isinstance(obj, (list, tuple)):
-            primitives_only = True
-            for item in obj:
-                if isinstance(item, (list, tuple, dict)):
-                    primitives_only = False
-                    break
-            output = []
-            if primitives_only:
-                for item in obj:
-                    output.append(json.dumps(item))
-                return "[" + ", ".join(output) + "]"
-            else:
-                self.current_indent += self.indent
-                self.current_indent_str = "".join([" " for x in range(self.current_indent)])
-                for item in obj:
-                    output.append(self.current_indent_str + self.encode(item))
-                self.current_indent -= self.indent
-                self.current_indent_str = "".join([" " for x in range(self.current_indent)])
-                return "[\n" + ",\n".join(output) + "\n" + self.current_indent_str + "]"
-        elif isinstance(obj, dict):
-            output = []
-            self.current_indent += self.indent
-            self.current_indent_str = "".join([" " for x in range(self.current_indent)])
-            for key, value in obj.items():
-                output.append(self.current_indent_str + json.dumps(key) + ": " + self.encode(value))
-            self.current_indent -= self.indent
-            self.current_indent_str = "".join([" " for x in range(self.current_indent)])
-            return "{\n" + ",\n".join(output) + "\n" + self.current_indent_str + "}"
-        else:
-            return json.dumps(obj)
+from postprocessing.json_encoder import MyJSONEncoder
 
 
 def jaccard_index(list_1, list_2):
@@ -133,23 +96,3 @@ def process_results(res_filepath, dist_estimates, eval_nearest_neighbors):
         results_df.loc[:, ['fold', 'test'] + jaccard_index_columns].to_csv(
             os.path.join(out_dir, 'results_jaccard.csv'), index=False
         )
-
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Script for processing the results of the experiments on the classical'
-                                                 '/quantum k-NN based on the Euclidean distance.')
-    parser.add_argument('res_dirs', metavar='res_dirs', type=str, nargs='+', default=None,
-                        help='list of directories containing the results of the experiments.')
-    args = parser.parse_args()
-
-    last_res_dir_index = len(args.res_dirs) - 1
-    for i, res_dir in enumerate(args.res_dirs):
-        print('\nDirectory: \'{}\''.format(res_dir.split(os.sep)[-1]))
-
-        # Load the experiment configuration file and process the results
-        with open(os.path.join(res_dir, 'exp_config.json')) as exp_config_file:
-            exp_config = json.load(exp_config_file)
-            process_results(os.path.join(res_dir, 'results.csv'), exp_config['knn']['dist_estimates'],
-                            exp_config['eval_nearest_neighbors'])
-
-        print('\n' + ('=' * 67) if i != last_res_dir_index else '')

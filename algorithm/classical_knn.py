@@ -1,71 +1,12 @@
 import json
 import numpy as np
 import os
-import sys
 
 from scipy.stats import mode
 from sklearn.neighbors import NearestNeighbors
 
-
-def print_cknn_results(N, sorted_indices, sorted_distances, k, normalized_knn_df, target_label, file=sys.stdout):
-    if file == sys.stdout:
-        print()
-    print(f'Instances sorted according to the Euclidean distance w.r.t. the target instance:', file=file)
-    index_max_chars = str(len(str(N)))
-    for i, (index, distance) in enumerate(zip(sorted_indices, sorted_distances)):
-        if i == k:
-            print('\t' + '-' * 71, file=file)
-        print(('\tindex: {:'+index_max_chars+'d}, distance: {:.10f}').format(index, distance), file=file)
-
-    print(f'\nThe normalized {k} nearest neighbors are:', file=file)
-    print(normalized_knn_df, file=file)
-
-    print(f'\nThe target instance label predicted is: {target_label}', file=file)
-
-
-def save_cknn_log(res_dir, filename, N, sorted_indices, sorted_distances, k, normalized_knn_df, target_label):
-    filepath = os.path.join(res_dir, f'{filename}.txt')
-    with open(filepath, 'w') as log_file:
-        print_cknn_results(N, sorted_indices, sorted_distances, k, normalized_knn_df, target_label, file=log_file)
-
-    return filepath
-
-
-def print_cknn_expectation_results(knn_indices, knn_distances, k, file=sys.stdout):
-    if file == sys.stdout:
-        print()
-    print(f'Classical expectation ({k} nearest neighbors):', file=file)
-    index_max_chars = str(len(str(max(knn_indices))))
-    for index, distance in zip(knn_indices, knn_distances):
-        print(('\tindex: {:' + index_max_chars + 'd}, distance: {:.10f}').format(index, distance), file=file)
-    if file == sys.stdout:
-        print()
-
-
-def save_cknn_expectation_log(res_dir, filename, knn_indices, knn_distances, k):
-    filepath = os.path.join(res_dir, f'{filename}.txt')
-    with open(filepath, 'w') as expectation_log_file:
-        print_cknn_expectation_results(knn_indices, knn_distances, k, file=expectation_log_file)
-
-    return filepath
-
-
-def save_distances(res_dir, filename, distances_dict):
-    filepath = os.path.join(res_dir, f'{filename}.csv')
-    with open(filepath, 'w') as csv_file:
-        csv_file.write('index,exact_estimate\n')
-        for j in range(0, len(distances_dict)):
-            csv_file.write('{},{:.10f}\n'.format(j, distances_dict[j]))
-
-    return filepath
-
-
-def save_dict_data_to_json_file(res_dir, filename, dict_data):
-    filepath = os.path.join(res_dir, f'{filename}.json')
-    with open(filepath, 'w') as json_file:
-        json.dump(dict_data, json_file, ensure_ascii=False, indent=4)
-
-    return filepath
+from algorithm.utils import print_cknn_results, save_cknn_log, print_cknn_expectation_results, \
+    save_cknn_expectation_log, save_cknn_distances, save_data_to_json_file
 
 
 def run_cknn(training_df, target_df, k, N, d, original_training_df, res_dir, expectation=False, verbose=True,
@@ -108,10 +49,10 @@ def run_cknn(training_df, target_df, k, N, d, original_training_df, res_dir, exp
             distances_filename = 'distances'
 
         distances_dict = {index: distance for index, distance in zip(sorted_indices, sorted_distances)}
-        save_distances(res_dir, distances_filename, distances_dict)
+        save_cknn_distances(res_dir, distances_filename, distances_dict)
 
-        knn_indices_out_file = save_dict_data_to_json_file(res_dir, 'k_nearest_neighbors_indices',
-                                                           {'exact': knn_indices.tolist()})
+        knn_indices_out_file = save_data_to_json_file(res_dir, 'k_nearest_neighbors_indices',
+                                                      {'exact': knn_indices.tolist()})
 
         if not expectation:
             knn_out_file = os.path.join(res_dir, 'k_nearest_neighbors.csv')
@@ -120,7 +61,7 @@ def run_cknn(training_df, target_df, k, N, d, original_training_df, res_dir, exp
             normalized_knn_out_file = os.path.join(res_dir, 'normalized_k_nearest_neighbors.csv')
             normalized_knn_df.to_csv(normalized_knn_out_file, index=False)
 
-            target_label_out_file = save_dict_data_to_json_file(
+            target_label_out_file = save_data_to_json_file(
                 res_dir, 'target_label', {'exact': getattr(target_label, "tolist", lambda: target_label)()}
             )
 

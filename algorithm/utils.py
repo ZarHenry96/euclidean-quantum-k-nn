@@ -5,10 +5,10 @@ import sys
 from qiskit import Aer, IBMQ
 
 
-def save_data_to_json_file(res_dir, filename, data):
+def save_data_to_json_file(res_dir, filename, data, indent=None):
     filepath = os.path.join(res_dir, f'{filename}.json')
     with open(filepath, 'w') as json_file:
-        json.dump(data, json_file, ensure_ascii=False, indent=4)
+        json.dump(data, json_file, ensure_ascii=False, indent=indent)
 
     return filepath
 
@@ -36,7 +36,60 @@ def save_exp_config(res_dir, filename, training_data_file, target_instance_file,
         'save_circuit_plot': save_circuit_plot
     }
 
-    return save_data_to_json_file(res_dir, filename, config)
+    return save_data_to_json_file(res_dir, filename, config, indent=4)
+
+
+def print_cknn_results(N, sorted_indices, sorted_distances, k, normalized_knn_df, target_label, file=sys.stdout):
+    if file == sys.stdout:
+        print()
+    print(f'Instances sorted according to the Euclidean distance w.r.t. the target instance:', file=file)
+    index_max_chars = str(len(str(N)))
+    for i, (index, distance) in enumerate(zip(sorted_indices, sorted_distances)):
+        if i == k:
+            print('\t' + '-' * 71, file=file)
+        print(('\tindex: {:'+index_max_chars+'d}, distance: {:.10f}').format(index, distance), file=file)
+
+    print(f'\nThe normalized {k} nearest neighbors are:', file=file)
+    print(normalized_knn_df, file=file)
+
+    print(f'\nThe target instance label predicted is: {target_label}', file=file)
+
+
+def print_cknn_expectation_results(knn_indices, knn_distances, k, file=sys.stdout):
+    if file == sys.stdout:
+        print()
+    print(f'Classical expectation ({k} nearest neighbors):', file=file)
+    index_max_chars = str(len(str(max(knn_indices))))
+    for index, distance in zip(knn_indices, knn_distances):
+        print(('\tindex: {:' + index_max_chars + 'd}, distance: {:.10f}').format(index, distance), file=file)
+    if file == sys.stdout:
+        print()
+
+
+def save_cknn_log(res_dir, filename, N, sorted_indices, sorted_distances, k, normalized_knn_df, target_label):
+    filepath = os.path.join(res_dir, f'{filename}.txt')
+    with open(filepath, 'w') as log_file:
+        print_cknn_results(N, sorted_indices, sorted_distances, k, normalized_knn_df, target_label, file=log_file)
+
+    return filepath
+
+
+def save_cknn_expectation_log(res_dir, filename, knn_indices, knn_distances, k):
+    filepath = os.path.join(res_dir, f'{filename}.txt')
+    with open(filepath, 'w') as expectation_log_file:
+        print_cknn_expectation_results(knn_indices, knn_distances, k, file=expectation_log_file)
+
+    return filepath
+
+
+def save_cknn_distances(res_dir, filename, distances_dict):
+    filepath = os.path.join(res_dir, f'{filename}.csv')
+    with open(filepath, 'w') as csv_file:
+        csv_file.write('index,exact_estimate\n')
+        for j in range(0, len(distances_dict)):
+            csv_file.write('{},{:.10f}\n'.format(j, distances_dict[j]))
+
+    return filepath
 
 
 def select_backend(exec_type, backend_name):
@@ -119,7 +172,7 @@ def save_qknn_log(res_dir, filename, p0, p1, index_qubits_num, index_and_ancilla
     return filepath
 
 
-def save_probabilities_and_distances(res_dir, filename, index_and_ancillary_joint_p, euclidean_distances, N):
+def save_qknn_probabilities_and_distances(res_dir, filename, index_and_ancillary_joint_p, euclidean_distances, N):
     filepath = os.path.join(res_dir, f'{filename}.csv')
     with open(filepath, 'w') as csv_file:
         csv_file.write(
