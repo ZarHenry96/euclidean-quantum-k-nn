@@ -15,7 +15,7 @@ function usage {
     echo "    -p pseudocounts = pseudocounts -for each index- for Laplace smoothing (only for simulations and quantum executions)"
     echo "    -u rounds = number of execution rounds (only for simulations and quantum executions)"
     echo "    -i seed_simulator = simulator sampling seed (only for local and online simulations, for multiple values set the -i parameter multiple times)"
-    echo "    -t dist_estimates = Euclidean distance estimate used for k nearest neighbors extraction, allowed values: zero, one, avg, diff (for multiple values set the -t parameter multiple times)"
+    echo "    -t dist_estimates = Euclidean distance estimate used for k nearest neighbors extraction, allowed values: zero, one, avg, diff (ignored in classical executions, for multiple values set the -t parameter multiple times)"
     echo "    -c save_circ_plot = whether to save the circuit plot or not"
     echo "    -m num_processes = number of processes for the parallel execution of circuits"
     exit 0
@@ -146,8 +146,8 @@ for template_file in "${exp_templates_dir}"/*.template; do
                         -e "s@\${num_processes}@${num_processes}@" "${template_file}" > "${exp_config_file}"
 
                     # Run the experiment
-                     python main.py "${exp_config_file}"
-                     printf "\n\n\n"
+                    python main.py "${exp_config_file}"
+                    printf "\n\n\n"
                 done
             done
         done
