@@ -322,8 +322,8 @@ def run_qknn(training_data_file, target_instance_file, k, exec_type, encoding, b
         algorithm_execution_time = (time.time() - start_time) - classical_expectation_execution_time
 
         return (knn_indices_out_file, knn_out_files, normalized_knn_out_files, target_label_out_file), \
-               expected_knn_indices_out_file, normalized_target_instance_file, \
-               (algorithm_execution_time, classical_expectation_execution_time)
+            expected_knn_indices_out_file, normalized_target_instance_file, \
+            (algorithm_execution_time, classical_expectation_execution_time)
 
     # Select the backend for the execution
     backend = select_backend(exec_type, backend_name)
@@ -449,5 +449,5 @@ def run_qknn(training_data_file, target_instance_file, k, exec_type, encoding, b
     algorithm_execution_time = (time.time() - start_time) - classical_expectation_execution_time
 
     return (knn_indices_out_file, knn_out_files, normalized_knn_out_files, target_label_out_file), \
-           expected_knn_indices_out_file, normalized_target_instance_file, \
-           (algorithm_execution_time, classical_expectation_execution_time)
+        expected_knn_indices_out_file, normalized_target_instance_file, \
+        (algorithm_execution_time, classical_expectation_execution_time)

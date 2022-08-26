@@ -80,13 +80,8 @@ for dist_estimate in "${dist_estimates[@]}"; do
 done
 dist_estimates_str="${dist_estimates_str%??}"
 
-# Get the absolute path of the directories of interest
-exp_templates_dir="$(cd "${exp_templates_dir}" && pwd -P)"
-datasets_dir="$(cd "${datasets_dir}" && pwd -P)"
-script_dir="$(cd -- "$(dirname "$0")" > /dev/null 2>&1 || exit ; pwd -P)"
-
-# Create a temporary directory to store the experiment configuration files
-tmp_dir="${script_dir}/tmp"
+# Create a temporary directory to store the experiments configuration files
+tmp_dir="tmp"
 mkdir -p "${tmp_dir}"
 
 # Iterate over template files

@@ -16,15 +16,6 @@ from postprocessing.process_results import process_results
 
 
 def preprocess_experiment_config(config):
-    if not os.path.isabs(config['dataset']):
-        config['dataset'] = os.path.abspath(config['dataset'])
-
-    if config['class_mapping'] is not None and not os.path.isabs(config['class_mapping']):
-        config['class_mapping'] = os.path.abspath(config['class_mapping'])
-
-    if not os.path.isabs(config['res_dir']):
-        config['res_dir'] = os.path.abspath(config['res_dir'])
-
     # If it is a classical execution, overwrite the encoding field and the dist_estimates field
     if config['knn']['exec_type'] == 'classical':
         config['knn']['encoding'] = 'classical'
