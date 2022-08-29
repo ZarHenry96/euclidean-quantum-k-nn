@@ -1,4 +1,3 @@
-import argparse
 import ast
 import json
 import numpy as np

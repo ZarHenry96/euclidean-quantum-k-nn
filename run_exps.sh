@@ -142,6 +142,8 @@ for template_file in "${exp_templates_dir}"/*.template; do
 
                     # Run the experiment
                     python main.py "${exp_config_file}"
+                    printf "\n\n"
+                    printf "%.s─" $(seq 1 "$(tput cols)")
                     printf "\n\n\n"
                 done
             done
@@ -151,3 +153,7 @@ done
 
 # Delete the temporary directory
 rm -rf "${tmp_dir}"
+
+# Collect the results of the experiments in a single file
+python postprocessing/collect_processed_results.py "${root_res_dir}"
+echo "Results collected"
