@@ -7,6 +7,7 @@ from json_encoder import MyJSONEncoder
 
 def collect_processed_results(root_res_dir):
     collected_res = {}
+    exec_times = {}
 
     # Iterate over 'exec_type' directories
     for exec_type in sorted(os.listdir(root_res_dir)):
@@ -14,21 +15,25 @@ def collect_processed_results(root_res_dir):
         # Check if it is a directory
         if os.path.isdir(exec_type_dir):
             collected_res[exec_type] = {}
+            exec_times[exec_type] = {}
 
             # Iterate over 'encoding' directories
             for encoding in sorted(os.listdir(exec_type_dir)):
                 encoding_dir = os.path.join(exec_type_dir, encoding)
                 collected_res[exec_type][encoding] = {}
+                exec_times[exec_type][encoding] = {}
 
                 # Iterate over 'dataset' directories
                 for dataset in sorted(os.listdir(encoding_dir)):
                     dataset_dir = os.path.join(encoding_dir, dataset)
                     collected_res[exec_type][encoding][dataset] = {}
+                    exec_times[exec_type][encoding][dataset] = {}
 
                     # Iterate over 'k value' directories
                     for k_value in sorted(os.listdir(dataset_dir)):
                         k_value_dir = os.path.join(dataset_dir, k_value)
                         collected_res[exec_type][encoding][dataset][k_value] = {}
+                        exec_times[exec_type][encoding][dataset][k_value] = {}
 
                         # Iterate over 'round' directories
                         for round in sorted(os.listdir(k_value_dir)):
@@ -42,9 +47,21 @@ def collect_processed_results(root_res_dir):
                                 # Add the experiment results to the output dictionary
                                 collected_res[exec_type][encoding][dataset][k_value][round] = exp_proc_res
 
+                            # Load the execution time
+                            exp_exec_time_filepath = os.path.join(round_dir, 'execution_time.txt')
+                            with open(exp_exec_time_filepath) as exp_exec_time_file:
+                                exp_exec_time = float(exp_exec_time_file.readline().split()[0])
+
+                                # Add the execution time to the output dictionary
+                                exec_times[exec_type][encoding][dataset][k_value][round] = exp_exec_time
+
     # Save the collected results to the output file
     with open(os.path.join(root_res_dir, 'collected_results.json'), 'w') as out_file:
         out_file.write(json.dumps(collected_res, cls=MyJSONEncoder, ensure_ascii=False, indent=4))
+
+    # Save the execution times to the output file
+    with open(os.path.join(root_res_dir, 'execution_times.json'), 'w') as out_file:
+        out_file.write(json.dumps(exec_times, cls=MyJSONEncoder, ensure_ascii=False, indent=4))
 
 
 if __name__ == '__main__':
