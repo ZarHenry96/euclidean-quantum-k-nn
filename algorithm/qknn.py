@@ -402,7 +402,8 @@ def run_qknn(training_data_file, target_instance_file, k, exec_type, encoding, b
     # Get the k nearest neighbors based on the specified distance estimates, and compute the target label accordingly
     for dist_estimate in dist_estimates:
         sorted_indices = [
-            index for index, _ in sorted(euclidean_distances.items(), key=lambda item: item[1][dist_estimate])
+            index
+            for index, _ in sorted(euclidean_distances.items(), key=lambda x: (round(x[1][dist_estimate], 10), x[0]))
         ]
         sorted_indices_lists.append(sorted_indices)
 

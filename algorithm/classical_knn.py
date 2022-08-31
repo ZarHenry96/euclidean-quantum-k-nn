@@ -1,4 +1,3 @@
-import json
 import numpy as np
 import os
 
@@ -7,6 +6,12 @@ from sklearn.neighbors import NearestNeighbors
 
 from algorithm.utils import print_cknn_results, save_cknn_log, print_cknn_expectation_results, \
     save_cknn_expectation_log, save_cknn_distances, save_data_to_json_file
+
+
+def additional_sorting_by_index(distances, indices):
+    sorted_distances, sorted_indices = zip(*sorted(zip(distances, indices), key=lambda x: (round(x[0], 10), x[1])))
+
+    return np.array(sorted_distances), np.array(sorted_indices)
 
 
 def run_cknn(training_df, target_df, k, N, d, original_training_df, res_dir, expectation=False, verbose=True,
@@ -21,8 +26,8 @@ def run_cknn(training_df, target_df, k, N, d, original_training_df, res_dir, exp
 
     # Run the model to obtain data indices (and distances) sorted according to the Euclidean distance metric
     knn_model_output = knn_model.kneighbors(target_instance)
-    sorted_indices, sorted_distances = knn_model_output[1][0], knn_model_output[0][0]
-    knn_indices, knn_distances = sorted_indices[0: k], sorted_distances[0: k]
+    sorted_distances, sorted_indices = additional_sorting_by_index(knn_model_output[0][0], knn_model_output[1][0])
+    knn_distances, knn_indices = sorted_distances[0: k], sorted_indices[0: k]
 
     # Extract the k nearest neighbors and predict the target label accordingly (if it is not an expectation execution)
     knn_df, normalized_knn_df, target_label = None, None, None
