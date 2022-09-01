@@ -2,7 +2,7 @@
 
 # Function to print the correct usage on terminal
 function usage {
-    echo "Usage: ./run_exps.sh [-e exps_dir] [-d datasets_dir] [-f folds_number] [-o k_fold_seed] [-r root_res_dir] [-v eval_nn] [-k k] [-n encoding] [-s shots] [-p pseudocounts] [-u rounds] [-i sim_seeds_seed] [-t dist_estimates] [-c save_circ_plot] [-m num_processes]"
+    echo "Usage: ./run_exps.sh [-e exps_dir] [-d datasets_dir] [-f folds_number] [-o k_fold_seed] [-r root_res_dir] [-v eval_nn] [-k k] [-n encoding] [-s shots] [-p pseudocounts] [-u runs] [-i sim_seeds_seed] [-t dist_estimates] [-c save_circ_plot] [-m num_processes]"
     echo "    -e exps_dir = directory containing the .template configuration files for the experiments"
     echo "    -d datasets_dir = directory containing the .csv datasets files and the .json class mapping files"
     echo "    -f folds_number = number of folds for the k-fold cross validation"
@@ -13,7 +13,7 @@ function usage {
     echo "    -n encoding = type of data encoding used in quantum circuits, allowed values: extension, translation (for multiple values set the -n parameter multiple times)"
     echo "    -s shots = number of measurements for simulations and quantum executions"
     echo "    -p pseudocounts = pseudocounts -for each index- for Laplace smoothing (only for simulations and quantum executions)"
-    echo "    -u rounds = number of execution rounds (only for simulations and quantum executions)"
+    echo "    -u runs = number of runs (only for simulations and quantum executions)"
     echo "    -i sim_seeds_seed = seed for generating simulator seeds (only for local and online simulations, for multiple values set the -i parameter multiple times)"
     echo "    -t dist_estimates = Euclidean distance estimate used for k nearest neighbors extraction, allowed values: zero, one, avg, diff (ignored in classical executions, for multiple values set the -t parameter multiple times)"
     echo "    -c save_circ_plot = whether to save the circuit plot or not"
@@ -32,7 +32,7 @@ k_values=()
 encodings=()
 shots=1024
 pseudocounts=0
-rounds_number=1
+runs=1
 sim_seeds_seeds=()
 dist_estimates=()
 save_circ_plot="true"
@@ -51,7 +51,7 @@ while getopts 'e:d:f:o:r:v:k:n:s:p:u:i:t:c:m:h' option; do
         n) encodings+=("${OPTARG}");;
         s) shots="${OPTARG}";;
         p) pseudocounts="${OPTARG}";;
-        u) rounds_number="${OPTARG}";;
+        u) runs="${OPTARG}";;
         i) sim_seeds_seeds+=("${OPTARG}");;
         t) dist_estimates+=("${OPTARG}");;
         c) save_circ_plot="${OPTARG}";;
@@ -96,10 +96,10 @@ for template_file in "${exp_templates_dir}"/*.template; do
         encodings_for_exec_type=("classical")
     fi
 
-    # Check if it is a 'classical' or a 'statevector' execution and set the number of rounds accordingly
-    rounds_for_exec_type="${rounds_number}"
+    # Check if it is a 'classical' or a 'statevector' execution and set the number of runs accordingly
+    runs_for_exec_type="${runs}"
     if [ "${exec_type}" == "classical" ] || [ "${exec_type}" == "statevector" ]; then
-        rounds_for_exec_type=1
+        runs_for_exec_type=1
     fi
 
     # Iterate over encodings
@@ -118,18 +118,18 @@ for template_file in "${exp_templates_dir}"/*.template; do
 
             # Iterate over k values
             for k in "${k_values[@]}"; do
-                # Iterate over rounds
-                for round in $(seq 0 $((rounds_for_exec_type - 1))); do
-                    # Get the "simulator seeds" seed for the current round
-                    if (( round < ${#sim_seeds_seeds[@]} )); then
-                        sim_seeds_seed="${sim_seeds_seeds[round]}"
+                # Iterate over runs
+                for run in $(seq 0 $((runs_for_exec_type - 1))); do
+                    # Get the "simulator seeds" seed for the current run
+                    if (( run < ${#sim_seeds_seeds[@]} )); then
+                        sim_seeds_seed="${sim_seeds_seeds[run]}"
                     else
                         sim_seeds_seed="${RANDOM}"
                     fi
 
                     # Set the results directory and the config filename for the experiment
-                    exp_res_dir="${root_res_dir}/${exec_type}/${encoding}/${dataset_name}/k_${k}/round_${round}"
-                    exp_config_file="${tmp_dir}/${exec_type}_${encoding}_${dataset_name}_k_${k}_round_${round}.json"
+                    exp_res_dir="${root_res_dir}/${exec_type}/${encoding}/${dataset_name}/k_${k}/run_${run}"
+                    exp_config_file="${tmp_dir}/${exec_type}_${encoding}_${dataset_name}_k_${k}_run_${run}.json"
 
                     # Create the experiment configuration file starting from the template
                     sed -e "s@\${dataset}@${dataset_file}@" -e "s@\${class_mapping}@${class_mapping_file}@" \

@@ -35,26 +35,26 @@ def collect_processed_results(root_res_dir, exec_times_too=True):
                         collected_res[exec_type][encoding][dataset][k_value] = {}
                         exec_times[exec_type][encoding][dataset][k_value] = {}
 
-                        # Iterate over 'round' directories
-                        for round in sorted(os.listdir(k_value_dir)):
-                            round_dir = os.path.join(k_value_dir, round)
+                        # Iterate over 'run' directories
+                        for run in sorted(os.listdir(k_value_dir)):
+                            run_dir = os.path.join(k_value_dir, run)
 
                             # Load the processed results
-                            exp_proc_res_filepath = os.path.join(round_dir, 'results_processed.json')
+                            exp_proc_res_filepath = os.path.join(run_dir, 'results_processed.json')
                             with open(exp_proc_res_filepath) as exp_proc_res_file:
                                 exp_proc_res = json.load(exp_proc_res_file)
 
                                 # Add the experiment results to the output dictionary
-                                collected_res[exec_type][encoding][dataset][k_value][round] = exp_proc_res
+                                collected_res[exec_type][encoding][dataset][k_value][run] = exp_proc_res
 
                             # Load the execution time (if needed)
                             if exec_times_too:
-                                exp_exec_time_filepath = os.path.join(round_dir, 'execution_time.txt')
+                                exp_exec_time_filepath = os.path.join(run_dir, 'execution_time.txt')
                                 with open(exp_exec_time_filepath) as exp_exec_time_file:
                                     exp_exec_time = float(exp_exec_time_file.readline().split()[0])
 
                                     # Add the execution time to the output dictionary
-                                    exec_times[exec_type][encoding][dataset][k_value][round] = exp_exec_time
+                                    exec_times[exec_type][encoding][dataset][k_value][run] = exp_exec_time
 
     # Save the collected results to the output file
     with open(os.path.join(root_res_dir, 'collected_results.json'), 'w') as out_file:

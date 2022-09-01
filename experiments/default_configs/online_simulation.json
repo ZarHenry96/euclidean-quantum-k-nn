@@ -3,7 +3,7 @@
     "class_mapping": "data/datasets/01_iris_versicolor_virginica_class_mapping.json",
     "folds_number": 5,
     "k_fold_random_seed": 7,
-    "res_dir": "results/default_configs/online_simulation_extension_01_iris_versicolor_virginica_k_5_round_0",
+    "res_dir": "results/default_configs/online_simulation_extension_01_iris_versicolor_virginica_k_5_run_0",
     "eval_nearest_neighbors": true,
     "knn": {
         "k": 5,
