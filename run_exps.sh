@@ -2,7 +2,7 @@
 
 # Function to print the correct usage on terminal
 function usage {
-    echo "Usage: ./run_exps.sh [-e exps_dir] [-d datasets_dir] [-f folds_number] [-o k_fold_seed] [-r root_res_dir] [-v eval_nn] [-k k] [-n encoding] [-s shots] [-p pseudocounts] [-u rounds] [-i seed_simulator] [-t dist_estimates] [-c save_circ_plot] [-m num_processes]"
+    echo "Usage: ./run_exps.sh [-e exps_dir] [-d datasets_dir] [-f folds_number] [-o k_fold_seed] [-r root_res_dir] [-v eval_nn] [-k k] [-n encoding] [-s shots] [-p pseudocounts] [-u rounds] [-i sim_seeds_seed] [-t dist_estimates] [-c save_circ_plot] [-m num_processes]"
     echo "    -e exps_dir = directory containing the .template configuration files for the experiments"
     echo "    -d datasets_dir = directory containing the .csv datasets files and the .json class mapping files"
     echo "    -f folds_number = number of folds for the k-fold cross validation"
@@ -14,7 +14,7 @@ function usage {
     echo "    -s shots = number of measurements for simulations and quantum executions"
     echo "    -p pseudocounts = pseudocounts -for each index- for Laplace smoothing (only for simulations and quantum executions)"
     echo "    -u rounds = number of execution rounds (only for simulations and quantum executions)"
-    echo "    -i seed_simulator = simulator sampling seed (only for local and online simulations, for multiple values set the -i parameter multiple times)"
+    echo "    -i sim_seeds_seed = seed for generating simulator seeds (only for local and online simulations, for multiple values set the -i parameter multiple times)"
     echo "    -t dist_estimates = Euclidean distance estimate used for k nearest neighbors extraction, allowed values: zero, one, avg, diff (ignored in classical executions, for multiple values set the -t parameter multiple times)"
     echo "    -c save_circ_plot = whether to save the circuit plot or not"
     echo "    -m num_processes = number of processes for the parallel execution of circuits"
@@ -33,7 +33,7 @@ encodings=()
 shots=1024
 pseudocounts=0
 rounds_number=1
-seeds_simulator=()
+sim_seeds_seeds=()
 dist_estimates=()
 save_circ_plot="true"
 num_processes=5
@@ -52,7 +52,7 @@ while getopts 'e:d:f:o:r:v:k:n:s:p:u:i:t:c:m:h' option; do
         s) shots="${OPTARG}";;
         p) pseudocounts="${OPTARG}";;
         u) rounds_number="${OPTARG}";;
-        i) seeds_simulator+=("${OPTARG}");;
+        i) sim_seeds_seeds+=("${OPTARG}");;
         t) dist_estimates+=("${OPTARG}");;
         c) save_circ_plot="${OPTARG}";;
         m) num_processes="${OPTARG}";;
@@ -62,7 +62,7 @@ while getopts 'e:d:f:o:r:v:k:n:s:p:u:i:t:c:m:h' option; do
 done
 shift "$((OPTIND -1))"
 
-# Use the default values for the array variables not set by the user (except for 'seeds_simulator')
+# Use the default values for the array variables not set by the user (except for 'sim_seeds_seeds')
 if (( ${#k_values[@]} == 0 )); then
     k_values=(5)
 fi
@@ -120,11 +120,11 @@ for template_file in "${exp_templates_dir}"/*.template; do
             for k in "${k_values[@]}"; do
                 # Iterate over rounds
                 for round in $(seq 0 $((rounds_for_exec_type - 1))); do
-                    # Get the simulator seed for the current round
-                    if (( round < ${#seeds_simulator[@]} )); then
-                        seed_simulator="${seeds_simulator[round]}"
+                    # Get the "simulator seeds" seed for the current round
+                    if (( round < ${#sim_seeds_seeds[@]} )); then
+                        sim_seeds_seed="${sim_seeds_seeds[round]}"
                     else
-                        seed_simulator="${RANDOM}"
+                        sim_seeds_seed="${RANDOM}"
                     fi
 
                     # Set the results directory and the config filename for the experiment
@@ -136,7 +136,7 @@ for template_file in "${exp_templates_dir}"/*.template; do
                         -e "s@\${folds_number}@${folds_number}@" -e "s@\${k_fold_random_seed}@${k_fold_seed}@" \
                         -e "s@\${res_dir}@${exp_res_dir}@" -e "s@\${eval_nn}@${eval_nn}@" \
                         -e "s@\${k}@${k}@" -e "s@\${encoding}@${encoding}@" -e "s@\${shots}@${shots}@" \
-                        -e "s@\${pseudocounts}@${pseudocounts}@" -e "s@\${seed_simulator}@${seed_simulator}@" \
+                        -e "s@\${pseudocounts}@${pseudocounts}@" -e "s@\${sim_seeds_seed}@${sim_seeds_seed}@" \
                         -e "s@\${dist_estimates}@${dist_estimates_str}@" -e "s@\${save_circ_plot}@${save_circ_plot}@" \
                         -e "s@\${num_processes}@${num_processes}@" "${template_file}" > "${exp_config_file}"
 

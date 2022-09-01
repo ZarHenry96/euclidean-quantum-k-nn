@@ -13,7 +13,7 @@
         "job_name_prefix": null,
         "shots": 1024,
         "pseudocounts": 10,
-        "seed_simulator": 101,
+        "sim_seeds_seed": 101,
         "seed_transpiler": null,
         "dist_estimates": [
             "avg",

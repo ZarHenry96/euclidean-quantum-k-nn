@@ -3,6 +3,7 @@ import copy
 import json
 import os
 import pandas as pd
+import random
 import shutil
 import sys
 import tarfile
@@ -65,7 +66,7 @@ def list_to_csv_field(values_list):
     return '[' + ' '.join([str(value) for value in values_list]) + ']'
 
 
-def run_fold(config, dataset, train, test, i, fold_res_dir, res_file):
+def run_fold(config, dataset, train, test, rng_sim_seeds, i, fold_res_dir, res_file):
     print('Fold {}'.format(i))
     fold_start_time = time.time()
 
@@ -98,10 +99,12 @@ def run_fold(config, dataset, train, test, i, fold_res_dir, res_file):
 
         job_name = None if config['knn']['job_name_prefix'] is None \
             else '{}_f{}_t{}'.format(config['knn']['job_name_prefix'], i, j)
+        seed_simulator = rng_sim_seeds.randint(0, 1000000) if rng_sim_seeds is not None else None
         test_config = {
             'training_data': training_data_file,
             'test_instance': test_instance_no_label_file,
             'job_name': job_name,
+            'seed_simulator': seed_simulator,
             'res_dir': test_j_res_dir,
             'classical_expectation': eval_nearest_neighbors,
             'verbose': False,
@@ -207,12 +210,16 @@ def run(config):
         with open(os.path.join(res_dir, 'training_test_splits.json'), 'w') as tts_file:
             json.dump(training_test_splits, tts_file, ensure_ascii=False)
 
+        # Initialize the random number generator for simulator seeds (if needed)
+        rng_sim_seeds = random.Random(config['knn']['sim_seeds_seed']) if config['knn']['sim_seeds_seed'] is not None \
+            else None
+
         # Iterate over folds
         for i, (train, test) in enumerate(training_test_splits):
             fold_i_res_dir = os.path.join(res_dir, 'fold_{}'.format(i))
             os.makedirs(fold_i_res_dir)
 
-            run_fold(config, dataset, train, test, i, fold_i_res_dir, res_file)
+            run_fold(config, dataset, train, test, rng_sim_seeds, i, fold_i_res_dir, res_file)
 
     # Process the results
     print('\nResults')

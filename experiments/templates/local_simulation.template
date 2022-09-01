@@ -13,7 +13,7 @@
         "job_name_prefix": null,
         "shots": ${shots},
         "pseudocounts": ${pseudocounts},
-        "seed_simulator": ${seed_simulator},
+        "sim_seeds_seed": ${sim_seeds_seed},
         "seed_transpiler": null,
         "dist_estimates": [${dist_estimates}],
         "save_circuit_plot": ${save_circ_plot}
