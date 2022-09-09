@@ -9,7 +9,7 @@ from algorithm.qknn import run_qknn
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Command line main file for the execution of the classical/quantum '
-                                                 'k-NN based on the euclidean distance.')
+                                                 'k-NN based on the Euclidean distance.')
     parser.add_argument('training_data_file', metavar='training_data_file', type=str, nargs='?',
                         help='file containing the training data (CSV file).')
     parser.add_argument('target_instance_file', metavar='target_instance_file', type=str, nargs='?',
