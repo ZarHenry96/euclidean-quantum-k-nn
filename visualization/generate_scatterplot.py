@@ -75,6 +75,18 @@ def load_data(cltd_res_file, exec_type, encodings, datasets, k_values, avg_on_ru
     return data
 
 
+def flatten_list(input_list):
+    flat_list = []
+
+    for element in input_list:
+        if isinstance(element, list):
+            flat_list += flatten_list(element)
+        else:
+            flat_list.append(element)
+
+    return flat_list
+
+
 def generate_scatterplot(x_data, y_data, legend_labels, legend_position, x_label, y_label, title, plot_limits,
                          out_file, verbose):
     if out_file.endswith('.pdf'):
@@ -166,12 +178,19 @@ def compute_statistics(x_data, y_data, legend_labels, statistical_test, statisti
 def main(x_cltd_res_file, x_exec_type, x_encodings, x_datasets, x_kvalues, x_avg_on_runs, x_dist_estimate,
          x_partition_key, y_cltd_res_file, y_exec_type, y_encodings, y_datasets, y_kvalues, y_avg_on_runs,
          y_dist_estimate, y_partition_key, metric, legend_labels, legend_position, x_label, y_label, title,
-         plot_limits, out_file, statistical_test, statistics_out_file, verbose):
+         adaptive_plot_limits, plot_limits, out_file, statistical_test, statistics_out_file, verbose):
     # Load results data
     x_data = load_data(x_cltd_res_file, x_exec_type, x_encodings, x_datasets, x_kvalues, x_avg_on_runs, x_dist_estimate,
                        metric, x_partition_key)
     y_data = load_data(y_cltd_res_file, y_exec_type, y_encodings, y_datasets, y_kvalues, y_avg_on_runs, y_dist_estimate,
                        metric, y_partition_key)
+
+    # Determine the plot limits, if the adaptive_plot_limits flag is enabled
+    if adaptive_plot_limits:
+        all_data = flatten_list(x_data) + flatten_list(y_data)
+        min_value, max_value = min(all_data), max(all_data)
+        abs_diff, percentage = max_value - min_value, 0.05
+        plot_limits = [round(min_value - abs_diff * percentage, 4), round(max_value + abs_diff * percentage, 4)]
 
     # Create output directory
     os.makedirs(os.path.dirname(out_file), exist_ok=True)
@@ -239,9 +258,11 @@ if __name__ == '__main__':
     parser.add_argument('--x-label', metavar='x_label', type=str, nargs='?', default='', help='label for the x axis.')
     parser.add_argument('--y-label', metavar='y_label', type=str, nargs='?', default='', help='label for the y axis.')
     parser.add_argument('--title', metavar='title', type=str, nargs='?', default='', help='chart title.')
+    parser.add_argument('--adaptive-plot-limits', dest='adaptive_plot_limits', action='store_const', const=True,
+                        default=False, help='set the plot limits automatically (based on the metric values).')
     parser.add_argument('--plot-limits', metavar='plot_limits', type=float, nargs='+', default=[-0.05, 1.05],
-                        help='limit values for the scatter plot (they must be two, i.e., lower and upper); '
-                             'the default values are -0.05 and 1.05.')
+                        help='limit values (lower and upper) for the scatter plot; the default values are -0.05 and '
+                             '1.05. This option is ignored if the adaptive-plot-limits flag is enabled.')
     parser.add_argument('--out-file', metavar='out_file', type=str, default='scatterplot.pdf', help='output file path.')
     parser.add_argument('--statistical-test', metavar='statistical_test', type=str, nargs='?', default=None,
                         help='statistical test to run on the scatter plot data (partition by partition), allowed '
@@ -258,4 +279,5 @@ if __name__ == '__main__':
              args.x_avg_on_runs, args.x_dist_estimate, args.x_partition_key, args.y_cltd_res_file, args.y_exec_type,
              args.y_encodings, args.y_datasets, args.y_kvalues, args.y_avg_on_runs, args.y_dist_estimate,
              args.y_partition_key, args.metric, args.legend_labels, args.legend_position, args.x_label, args.y_label,
-             args.title, args.plot_limits, args.out_file, args.statistical_test, args.statistics_out_file, args.verbose)
+             args.title, args.adaptive_plot_limits, args.plot_limits, args.out_file, args.statistical_test,
+             args.statistics_out_file, args.verbose)
