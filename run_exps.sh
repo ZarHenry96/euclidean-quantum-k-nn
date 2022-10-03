@@ -84,6 +84,8 @@ dist_estimates_str="${dist_estimates_str%??}"
 tmp_dir="tmp"
 mkdir -p "${tmp_dir}"
 
+# Generate the experiments configuration files
+exps_config_files=()
 # Iterate over template files
 for template_file in "${exp_templates_dir}"/*.template; do
     # Get the experiment type (exec_type) from the template filename
@@ -140,20 +142,16 @@ for template_file in "${exp_templates_dir}"/*.template; do
                         -e "s@\${dist_estimates}@${dist_estimates_str}@" -e "s@\${save_circ_plot}@${save_circ_plot}@" \
                         -e "s@\${num_processes}@${num_processes}@" "${template_file}" > "${exp_config_file}"
 
-                    # Run the experiment
-                    python main.py "${exp_config_file}"
-                    printf "\n\n"
-                    printf "%.s─" $(seq 1 "$(tput cols)")
-                    printf "\n\n\n"
+                    # Append the experiment configuration file to the list
+                    exps_config_files+=("${exp_config_file}")
                 done
             done
         done
     done
 done
 
+# Run the experiments
+python main.py --exps-configs "${exps_config_files[@]}" --collect-res-dir "${root_res_dir}"
+
 # Delete the temporary directory
 rm -rf "${tmp_dir}"
-
-# Collect the results of the experiments in a single file
-python postprocessing/collect_processed_results.py "${root_res_dir}"
-echo "Results collected"

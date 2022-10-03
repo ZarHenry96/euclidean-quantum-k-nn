@@ -1,8 +1,7 @@
-import argparse
 import json
 import os
 
-from json_encoder import MyJSONEncoder
+from postprocessing.json_encoder import MyJSONEncoder
 
 
 def collect_processed_results(root_res_dir, exec_times_too=True):
@@ -64,15 +63,3 @@ def collect_processed_results(root_res_dir, exec_times_too=True):
     if exec_times_too:
         with open(os.path.join(root_res_dir, 'execution_times.json'), 'w') as out_file:
             out_file.write(json.dumps(exec_times, cls=MyJSONEncoder, ensure_ascii=False, indent=4))
-
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Script for collecting the processed results of multiple experiments '
-                                                 'in a single file.')
-    parser.add_argument('root_res_dir', metavar='root_res_dir', type=str, nargs='?', default=None,
-                        help='root results directory (as defined in run_exps.sh).')
-    parser.add_argument('--not-exec-times', dest='not_exec_times', action='store_const', const=True, default=False,
-                        help='do not collect the execution times (the execution times are collected by default).')
-    args = parser.parse_args()
-
-    collect_processed_results(args.root_res_dir, exec_times_too=(not args.not_exec_times))

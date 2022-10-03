@@ -13,7 +13,8 @@ from sklearn.model_selection import StratifiedKFold
 from tqdm.contrib.concurrent import process_map
 
 from algorithm.qknn import run_qknn
-from postprocessing.process_results import process_results
+from postprocessing.results_processing import process_results
+from postprocessing.processed_results_collection import collect_processed_results
 
 
 def preprocess_experiment_config(config):
@@ -152,9 +153,9 @@ def run_fold(config, dataset, train, test, rng_sim_seeds, i, fold_res_dir, res_f
     print()
 
 
-def run(config):
+def run_experiment(config):
     start_time = time.time()
-    
+
     # Show the experiment configuration
     print('Experiment Configuration\n')
     print_config_dict(config)
@@ -235,13 +236,27 @@ def run(config):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Script for running experiments on the classical/quantum k-NN based '
                                                  'on the Euclidean distance.')
-    parser.add_argument('config_filepath', metavar='config_filepath', type=str, nargs='?', default=None,
-                        help='path of the (.json) file containing the configuration for the experiment.')
+    parser.add_argument('--exps-configs', metavar='exps_configs', type=str, nargs='+', default=[],
+                        help='list of experiments configuration (JSON) filepaths.')
+    parser.add_argument('--collect-res-dir', metavar='collect_res_dir', type=str, nargs='?', default=None,
+                        help='root results directory for the collection of multiple experiments results. This operation'
+                             ' requires the directory subtree to be structured as in the \'run_exps.sh\' script.')
     args = parser.parse_args()
 
-    config_filepath = args.config_filepath
-    if config_filepath is not None:
+    # Iterate over experiments configuration filepaths
+    exps_number = len(args.exps_configs)
+    for config_filepath in args.exps_configs:
+        # Load the configuration file, preprocess it and run the experiment
         with open(config_filepath) as config_file:
             config = json.load(config_file)
             preprocess_experiment_config(config)
-            run(config)
+            run_experiment(config)
+
+        # Print a separator line (if needed)
+        if exps_number > 1:
+            print('\n\n' + '-' * os.get_terminal_size().columns + '\n\n')
+
+    # Collect the results of multiple experiments (if needed)
+    if args.collect_res_dir is not None:
+        collect_processed_results(args.collect_res_dir)
+        print("Results collected")
