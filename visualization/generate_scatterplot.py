@@ -1,90 +1,9 @@
 import argparse
-import json
 import matplotlib
 import matplotlib.pyplot as plt
-import numpy as np
 import os
-import sys
-import warnings
 
-from scipy.stats import ranksums, mannwhitneyu, wilcoxon
-
-warnings.filterwarnings('ignore', message='Sample size too small for normal approximation.')
-
-
-def load_data(cltd_res_file, exec_type, encodings, datasets, k_values, avg_on_runs, dist_estimate, metric,
-              partition_key):
-    data = []
-
-    # Open the collected results file
-    with open(cltd_res_file) as cltdrf:
-        # Get the results for the specified execution type
-        exec_type_res = json.load(cltdrf)[exec_type]
-
-        # Iterate over the encodings of interest
-        encodings_for_exec_type = exec_type_res.keys() if len(encodings) == 0 else encodings
-        for encoding in encodings_for_exec_type:
-            encoding_data = []
-            encoding_res = exec_type_res[encoding]
-
-            # Iterate over the datasets of interest
-            datasets_for_encoding = encoding_res.keys() if len(datasets) == 0 else datasets
-            for dataset in datasets_for_encoding:
-                dataset_res = encoding_res[dataset]
-
-                # Iterate over the k values of interest
-                k_values_for_dataset = dataset_res.keys() if len(k_values) == 0 else [f'k_{k}' for k in k_values]
-                for i, k_value in enumerate(k_values_for_dataset):
-                    k_value_data = []
-                    k_value_res = dataset_res[k_value]
-
-                    # Iterate over all runs
-                    runs_for_k_value = k_value_res.keys()
-                    for run in runs_for_k_value:
-                        run_res = k_value_res[run]
-
-                        # Get the distance estimate of interest
-                        dist_estimate_for_run = list(run_res.keys())[0] if dist_estimate is None else dist_estimate
-
-                        # Get the results for the metric of interest and append them to the list for the current k value
-                        per_fold_key = 'value_per_fold' if metric == 'accuracy' else 'mean_per_fold'
-                        metric_per_fold = run_res[dist_estimate_for_run][metric][per_fold_key]
-                        k_value_data.append(metric_per_fold)
-
-                    # Either average the "metric per fold" on runs or flatten the list
-                    if avg_on_runs:
-                        k_value_data = [np.mean(fold_metric_values) for fold_metric_values in zip(*k_value_data)]
-                    else:
-                        k_value_data = [item for sublist in k_value_data for item in sublist]
-
-                    # Manage the data for the current k value depending on the partition key
-                    if partition_key is None:
-                        data += k_value_data
-                    elif partition_key == 'encoding':
-                        encoding_data += k_value_data
-                    elif partition_key == 'k':
-                        if i < len(data):
-                            data[i] += k_value_data
-                        else:
-                            data.append(k_value_data)
-
-            # If the partition key is the encoding, append the data for the current encoding to the list
-            if partition_key == 'encoding':
-                data.append(encoding_data)
-    
-    return data
-
-
-def flatten_list(input_list):
-    flat_list = []
-
-    for element in input_list:
-        if isinstance(element, list):
-            flat_list += flatten_list(element)
-        else:
-            flat_list.append(element)
-
-    return flat_list
+from utils import load_data, get_adaptive_limits, compute_statistic
 
 
 def generate_scatterplot(x_data, y_data, legend_labels, legend_position, x_label, y_label, title, plot_limits,
@@ -151,26 +70,14 @@ def generate_scatterplot(x_data, y_data, legend_labels, legend_position, x_label
     plt.close()
 
 
-def compute_statistics(x_data, y_data, legend_labels, statistical_test, statistics_out_file):
+def compute_scatter_statistics(x_data, y_data, legend_labels, statistical_test, statistics_out_file):
     with open(statistics_out_file, 'w') as sof:
         sof.write('statistical_test,legend_label,statistic,p_value,is_significant\n')
 
         for i, (x_vals, y_vals) in enumerate(zip(x_data, y_data)):
             legend_label = legend_labels[i] if len(legend_labels) != 0 else None
 
-            if statistical_test == 'ranksums':
-                statistic, p_value = ranksums(x_vals, y_vals)
-            elif statistical_test == 'mannwhitneyu':
-                statistic, p_value = mannwhitneyu(x_vals, y_vals)
-            elif statistical_test == 'wilcoxon':
-                if np.any(np.array(x_vals) - np.array(y_vals)):  # there is at least one different element
-                    statistic, p_value = wilcoxon(x_vals, y_vals)
-                else:
-                    statistic, p_value = None, 1
-            else:
-                statistic, p_value = None, None
-
-            is_significant = p_value < 0.05
+            statistic, p_value, is_significant = compute_statistic(statistical_test, x_vals, y_vals)
 
             sof.write('{},{},{},{},{}\n'.format(statistical_test, legend_label, statistic, p_value, is_significant))
 
@@ -187,10 +94,7 @@ def main(x_cltd_res_file, x_exec_type, x_encodings, x_datasets, x_kvalues, x_avg
 
     # Determine the plot limits, if the adaptive_plot_limits flag is enabled
     if adaptive_plot_limits:
-        all_data = flatten_list(x_data) + flatten_list(y_data)
-        min_value, max_value = min(all_data), max(all_data)
-        abs_diff, percentage = max_value - min_value, 0.05
-        plot_limits = [round(min_value - abs_diff * percentage, 4), round(max_value + abs_diff * percentage, 4)]
+        plot_limits = get_adaptive_limits(x_data, y_data)
 
     # Create output directory
     os.makedirs(os.path.dirname(out_file), exist_ok=True)
@@ -199,17 +103,13 @@ def main(x_cltd_res_file, x_exec_type, x_encodings, x_datasets, x_kvalues, x_avg
     generate_scatterplot(x_data, y_data, legend_labels, legend_position, x_label, y_label, title, plot_limits,
                          out_file, verbose)
 
-    # Run the selected statistical test (if needed), and save the results
+    # Run the selected statistical test (if needed)
     if statistical_test is not None:
-        if statistical_test in ['ranksums', 'mannwhitneyu', 'wilcoxon']:
-            if statistics_out_file is None:
-                statistics_out_file = '{}_statistics.csv'.format(os.path.splitext(out_file)[0])
-            else:
-                os.makedirs(os.path.dirname(statistics_out_file), exist_ok=True)
-            compute_statistics(x_data, y_data, legend_labels, statistical_test, statistics_out_file)
+        if statistics_out_file is None:
+            statistics_out_file = '{}_statistics.csv'.format(os.path.splitext(out_file)[0])
         else:
-            print('Unknown statistical test!', file=sys.stderr)
-            exit(0)
+            os.makedirs(os.path.dirname(statistics_out_file), exist_ok=True)
+        compute_scatter_statistics(x_data, y_data, legend_labels, statistical_test, statistics_out_file)
 
 
 if __name__ == '__main__':
@@ -231,7 +131,7 @@ if __name__ == '__main__':
                         help='distance estimate for the x axis results file; the first one is taken by default.')
     parser.add_argument('--x-partition-key', metavar='x_partition_key', type=str, nargs='?', default=None,
                         help='key for partitioning the results of the x axis results file; allowed values: '
-                             'encoding, k.')
+                             'dataset, encoding, k.')
     parser.add_argument('--y-cltd-res-file', metavar='y_cltd_res_file', type=str, nargs='?', default=None,
                         help='collected_results.json file for the y axis.')
     parser.add_argument('--y-exec-type', metavar='y_exec_type', type=str, nargs='?', default=None,
@@ -248,7 +148,7 @@ if __name__ == '__main__':
                         help='distance estimate for the y axis results file; the first one is taken by default.')
     parser.add_argument('--y-partition-key', metavar='y_partition_key', type=str, nargs='?', default=None,
                         help='key for partitioning the results of the x axis results file; allowed values: '
-                             'encoding, k.')
+                             'dataset, encoding, k.')
     parser.add_argument('--metric', metavar='metric', type=str, nargs='?', default='accuracy', help='metric to plot, '
                         'allowed values: accuracy, jaccard_index, average_jaccard_index (accuracy is used by default).')
     parser.add_argument('--legend-labels', metavar='legend_labels', type=str, nargs='+', default=[],
@@ -274,7 +174,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if args.x_cltd_res_file is not None and args.x_exec_type is not None and args.y_cltd_res_file is not None \
-            and args.y_exec_type is not None and args.out_file is not None:
+            and args.y_exec_type is not None:
         main(args.x_cltd_res_file, args.x_exec_type, args.x_encodings, args.x_datasets, args.x_kvalues,
              args.x_avg_on_runs, args.x_dist_estimate, args.x_partition_key, args.y_cltd_res_file, args.y_exec_type,
              args.y_encodings, args.y_datasets, args.y_kvalues, args.y_avg_on_runs, args.y_dist_estimate,
