@@ -171,6 +171,7 @@ declare -a encodings=("extension" "translation")
 declare -a datasets=("01_iris_setosa_versicolor" "01_iris_setosa_virginica" "01_iris_versicolor_virginica"
                      "02_transfusion" "03_vertebral_column_2C" "04_seeds_1_2" "05_ecoli_cp_im" "06_glasses_1_2"
                      "07_breast_tissue_adi_fadmasgla" "08_breast_cancer" "09_accent_recognition_uk_us" "10_leaf_11_9")
+declare -a datasets_strings=("1a" "1b" "1c" "2" "3" "4" "5" "6" "7" "8" "9" "10")
 
 declare -a k_values=(3 5 7 9)
 declare -a k_values_strings=("k=3" "k=5" "k=7" "k=9")
@@ -183,8 +184,13 @@ declare -a y_limits=(0.0 0.675)
 
 plots_directory="${plots_root_dir}/boxplots/dataset_based"
 
-for dataset in "${datasets[@]}"; do
+last_dataset_index=$((${#datasets[@]} - 1))
+for i in $(seq 0 ${last_dataset_index}); do
+    dataset="${datasets[i]}"
+    dataset_string="${datasets_strings[i]}"
+
     for metric in "${metrics[@]}"; do
+        metric_name="${metric//_/ }"
 
         # encodings comparison
         for dist_estimate in "${dist_estimates[@]}"; do
@@ -197,8 +203,8 @@ for dataset in "${datasets[@]}"; do
                    --second-avg-on-runs --second-dist-estimate "${dist_estimate}" \
                    --metric "${metric}" --x-axis-prop "k" \
                    --legend-labels "${encodings[@]}" --x-ticks-labels "${k_values_strings[@]}"  \
-                   --x-label "k value" --y-label "${metric}" \
-                   --title "'${metric^}' distribution for different k values (simulation, ${dist_estimate}, ${dataset})" \
+                   --x-label "k value" --y-label "${metric_name}" \
+                   --title "'${metric_name^}' distribution for different k values (simulation, ${dist_estimate}, ${dataset_string})" \
                    --y-limits "${y_limits[@]}" \
                    --out-file "${plots_directory}/encodings_comp/${metric}/${dataset}-simulation_${encodings[0]}_${dist_estimate}_vs_simulation_${encodings[1]}_${dist_estimate}-${metric}_boxplot${extension}" \
                    --statistical-test "wilcoxon"
@@ -215,8 +221,8 @@ for dataset in "${datasets[@]}"; do
                    --second-avg-on-runs --second-dist-estimate "${dist_estimates[1]}" \
                    --metric "${metric}" --x-axis-prop "k" \
                    --legend-labels "${dist_estimates[@]}" --x-ticks-labels "${k_values_strings[@]}"  \
-                   --x-label "k value" --y-label "${metric}" \
-                   --title "'${metric^}' distribution for different k values (simulation, ${encoding}, ${dataset})" \
+                   --x-label "k value" --y-label "${metric_name}" \
+                   --title "'${metric_name^}' distribution for different k values (simulation, ${encoding}, ${dataset_string})" \
                    --y-limits "${y_limits[@]}" \
                    --out-file "${plots_directory}/dist_estimates_comp/${metric}/${dataset}-simulation_${encoding}_${dist_estimates[0]}_vs_simulation_${encoding}_${dist_estimates[1]}-${metric}_boxplot${extension}" \
                    --statistical-test "wilcoxon"
@@ -250,6 +256,7 @@ plots_directory="${plots_root_dir}/boxplots/k_value_based"
 
 for k_value in "${k_values[@]}"; do
     for metric in "${metrics[@]}"; do
+        metric_name="${metric//_/ }"
 
         # encodings comparison
         for dist_estimate in "${dist_estimates[@]}"; do
@@ -262,8 +269,8 @@ for k_value in "${k_values[@]}"; do
                    --second-avg-on-runs --second-dist-estimate "${dist_estimate}" \
                    --metric "${metric}" --x-axis-prop "dataset" \
                    --legend-labels "${encodings[@]}" --x-ticks-labels "${datasets_strings[@]}"  \
-                   --x-label "dataset" --y-label "${metric}" \
-                   --title "'${metric^}' distribution on different datasets (simulation, ${dist_estimate}, k=${k_value})" \
+                   --x-label "dataset" --y-label "${metric_name}" \
+                   --title "'${metric_name^}' distribution on different datasets (simulation, ${dist_estimate}, k=${k_value})" \
                    --y-limits "${y_limits[@]}" \
                    --out-file "${plots_directory}/encodings_comp/${metric}/k_${k_value}-simulation_${encodings[0]}_${dist_estimate}_vs_simulation_${encodings[1]}_${dist_estimate}-${metric}_boxplot${extension}" \
                    --statistical-test "wilcoxon"
@@ -280,8 +287,8 @@ for k_value in "${k_values[@]}"; do
                    --second-avg-on-runs --second-dist-estimate "${dist_estimates[1]}" \
                    --metric "${metric}" --x-axis-prop "dataset" \
                    --legend-labels "${dist_estimates[@]}" --x-ticks-labels "${datasets_strings[@]}"  \
-                   --x-label "dataset" --y-label "${metric}" \
-                   --title "'${metric^}' distribution on different datasets (simulation, ${encoding}, k=${k_value})" \
+                   --x-label "dataset" --y-label "${metric_name}" \
+                   --title "'${metric_name^}' distribution on different datasets (simulation, ${encoding}, k=${k_value})" \
                    --y-limits "${y_limits[@]}" \
                    --out-file "${plots_directory}/dist_estimates_comp/${metric}/k_${k_value}-simulation_${encoding}_${dist_estimates[0]}_vs_simulation_${encoding}_${dist_estimates[1]}-${metric}_boxplot${extension}" \
                    --statistical-test "wilcoxon"
