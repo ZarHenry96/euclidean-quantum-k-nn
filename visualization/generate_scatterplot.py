@@ -45,9 +45,9 @@ def generate_scatterplot(x_data, y_data, legend_labels, legend_position, x_label
             print('')
             if legend_label is not None:
                 print(legend_label.capitalize())
-            print('    X better:  {}'.format(len(x_better)))
-            print('    Y better:  {}'.format(len(y_better)))
-            print('    X,Y equal: {}'.format(len(equal_xy)))
+            print('    X is better:  {} time(s)'.format(len(x_better)))
+            print('    Y is better:  {} time(s)'.format(len(y_better)))
+            print('    X,Y are equal: {} time(s)'.format(len(equal_xy)))
 
     l_limit, u_limit = plot_limits
     ax.plot([l_limit, u_limit], [l_limit, u_limit], ls="--", c="grey")
@@ -72,14 +72,20 @@ def generate_scatterplot(x_data, y_data, legend_labels, legend_position, x_label
 
 def compute_scatter_statistics(x_data, y_data, legend_labels, statistical_test, statistics_out_file):
     with open(statistics_out_file, 'w') as sof:
-        sof.write('statistical_test,legend_label,statistic,p_value,is_significant\n')
+        sof.write('statistical_test,legend_label,statistic,p_value,is_significant,x_better_times,y_better_times,'
+                  'draws\n')
 
         for i, (x_vals, y_vals) in enumerate(zip(x_data, y_data)):
             legend_label = legend_labels[i] if len(legend_labels) != 0 else None
 
             statistic, p_value, is_significant = compute_statistic(statistical_test, x_vals, y_vals)
 
-            sof.write('{},{},{},{},{}\n'.format(statistical_test, legend_label, statistic, p_value, is_significant))
+            x_better_times = len([j for j in range(0, len(x_vals)) if x_vals[j] > y_vals[j]])
+            y_better_times = len([j for j in range(0, len(x_vals)) if x_vals[j] < y_vals[j]])
+            draws = len([j for j in range(0, len(x_vals)) if x_vals[j] == y_vals[j]])
+
+            sof.write('{},{},{},{},{},{},{},{}\n'.format(statistical_test, legend_label, statistic, p_value,
+                                                         is_significant, x_better_times, y_better_times, draws))
 
 
 def main(x_cltd_res_file, x_exec_type, x_encodings, x_datasets, x_kvalues, x_avg_on_runs, x_dist_estimate,
