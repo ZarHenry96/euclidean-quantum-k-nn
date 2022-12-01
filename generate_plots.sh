@@ -195,7 +195,7 @@ done
 
 
 
-echo "Box plots: dataset-based comparisons"
+echo "Box plots: dataset-based comparisons (avg on runs & no avg on runs)"
 
 first_cltd_res_file="${first_res_file}"
 second_cltd_res_file="${second_res_file}"
@@ -210,63 +210,81 @@ declare -a datasets_strings=("1a" "1b" "1c" "2" "3" "4" "5" "6" "7" "8" "9" "10"
 declare -a k_values=(3 5 7 9)
 declare -a k_values_strings=("k=3" "k=5" "k=7" "k=9")
 
+declare -a avg_on_runs=("true" "false")
+
 declare -a dist_estimates=("avg" "diff")
 
 declare -a metrics=("jaccard_index" "average_jaccard_index")
 
-declare -a y_limits=(0.0 0.675)
-
-plots_directory="${plots_root_dir}/boxplots/dataset_based"
+declare -a y_limits=(-0.05 0.8)
 
 last_dataset_index=$((${#datasets[@]} - 1))
 for i in $(seq 0 ${last_dataset_index}); do
     dataset="${datasets[i]}"
     dataset_string="${datasets_strings[i]}"
 
-    for metric in "${metrics[@]}"; do
-        metric_name="${metric//_/ }"
+    for avg_on_runs_flag in "${avg_on_runs[@]}"; do
+        if [ "${avg_on_runs_flag}" == "true" ]; then
+            first_avg_on_runs="--first-avg-on-runs"
+            second_avg_on_runs="--second-avg-on-runs"
+            title_postfix=""
+            plots_directory="${plots_root_dir}/boxplots/dataset_based"
+            out_file_spec=""
+            statistical_test="wilcoxon"
+        else
+            first_avg_on_runs=""
+            second_avg_on_runs=""
+            title_postfix=", no avg"
+            plots_directory="${plots_root_dir}/boxplots_no_avg_on_runs/dataset_based"
+            out_file_spec="no_avg_on_runs-"
+            statistical_test="ranksums"
+        fi
 
-        # encodings comparison
-        for dist_estimate in "${dist_estimates[@]}"; do
-            python visualization/generate_boxplot.py \
-                   --first-cltd-res-file "${first_cltd_res_file}" --first-exec-type "local_simulation" \
-                   --first-encodings "${encodings[0]}" --first-datasets "${dataset}" --first-kvalues "${k_values[@]}" \
-                   --first-avg-on-runs --first-dist-estimate "${dist_estimate}" \
-                   --second-cltd-res-file "${second_cltd_res_file}" --second-exec-type "local_simulation" \
-                   --second-encodings "${encodings[1]}" --second-datasets "${dataset}" --second-kvalues "${k_values[@]}" \
-                   --second-avg-on-runs --second-dist-estimate "${dist_estimate}" \
-                   --metric "${metric}" --x-axis-prop "k" \
-                   --legend-labels "${encodings[@]}" --x-ticks-labels "${k_values_strings[@]}"  \
-                   --x-label "k value" --y-label "${metric_name}" \
-                   --title "'${metric_name^}' distribution for different k values (simulation, ${dist_estimate}, ${dataset_string})" \
-                   --y-limits "${y_limits[@]}" \
-                   --out-file "${plots_directory}/encodings_comp/${metric}/${dataset}-simulation_${encodings[0]}_${dist_estimate}_vs_simulation_${encodings[1]}_${dist_estimate}-${metric}_boxplot${extension}" \
-                   --statistical-test "wilcoxon"
-        done
+        for metric in "${metrics[@]}"; do
+            metric_name="${metric//_/ }"
 
-        # distance estimates comparison
-        for encoding in "${encodings[@]}"; do
-            python visualization/generate_boxplot.py \
-                   --first-cltd-res-file "${first_cltd_res_file}" --first-exec-type "local_simulation" \
-                   --first-encodings "${encoding}" --first-datasets "${dataset}" --first-kvalues "${k_values[@]}" \
-                   --first-avg-on-runs --first-dist-estimate "${dist_estimates[0]}" \
-                   --second-cltd-res-file "${second_cltd_res_file}" --second-exec-type "local_simulation" \
-                   --second-encodings "${encoding}" --second-datasets "${dataset}" --second-kvalues "${k_values[@]}" \
-                   --second-avg-on-runs --second-dist-estimate "${dist_estimates[1]}" \
-                   --metric "${metric}" --x-axis-prop "k" \
-                   --legend-labels "${dist_estimates[@]}" --x-ticks-labels "${k_values_strings[@]}"  \
-                   --x-label "k value" --y-label "${metric_name}" \
-                   --title "'${metric_name^}' distribution for different k values (simulation, ${encoding}, ${dataset_string})" \
-                   --y-limits "${y_limits[@]}" \
-                   --out-file "${plots_directory}/dist_estimates_comp/${metric}/${dataset}-simulation_${encoding}_${dist_estimates[0]}_vs_simulation_${encoding}_${dist_estimates[1]}-${metric}_boxplot${extension}" \
-                   --statistical-test "wilcoxon"
+            # encodings comparison
+            for dist_estimate in "${dist_estimates[@]}"; do
+                python visualization/generate_boxplot.py \
+                       --first-cltd-res-file "${first_cltd_res_file}" --first-exec-type "local_simulation" \
+                       --first-encodings "${encodings[0]}" --first-datasets "${dataset}" --first-kvalues "${k_values[@]}" \
+                       ${first_avg_on_runs} --first-dist-estimate "${dist_estimate}" \
+                       --second-cltd-res-file "${second_cltd_res_file}" --second-exec-type "local_simulation" \
+                       --second-encodings "${encodings[1]}" --second-datasets "${dataset}" --second-kvalues "${k_values[@]}" \
+                       ${second_avg_on_runs} --second-dist-estimate "${dist_estimate}" \
+                       --metric "${metric}" --x-axis-prop "k" \
+                       --legend-labels "${encodings[@]}" --x-ticks-labels "${k_values_strings[@]}"  \
+                       --x-label "k value" --y-label "${metric_name}" \
+                       --title "'${metric_name^}' distribution for different k values (sim., ${dist_estimate}, ${dataset_string}${title_postfix})" \
+                       --y-limits "${y_limits[@]}" \
+                       --out-file "${plots_directory}/encodings_comp/${metric}/${dataset}-simulation_${encodings[0]}_${dist_estimate}_vs_simulation_${encodings[1]}_${dist_estimate}-${out_file_spec}${metric}_boxplot${extension}" \
+                       --statistical-test "${statistical_test}"
+            done
+
+            # distance estimates comparison
+            for encoding in "${encodings[@]}"; do
+                python visualization/generate_boxplot.py \
+                       --first-cltd-res-file "${first_cltd_res_file}" --first-exec-type "local_simulation" \
+                       --first-encodings "${encoding}" --first-datasets "${dataset}" --first-kvalues "${k_values[@]}" \
+                       ${first_avg_on_runs} --first-dist-estimate "${dist_estimates[0]}" \
+                       --second-cltd-res-file "${second_cltd_res_file}" --second-exec-type "local_simulation" \
+                       --second-encodings "${encoding}" --second-datasets "${dataset}" --second-kvalues "${k_values[@]}" \
+                       ${second_avg_on_runs} --second-dist-estimate "${dist_estimates[1]}" \
+                       --metric "${metric}" --x-axis-prop "k" \
+                       --legend-labels "${dist_estimates[@]}" --x-ticks-labels "${k_values_strings[@]}"  \
+                       --x-label "k value" --y-label "${metric_name}" \
+                       --title "'${metric_name^}' distribution for different k values (sim., ${encoding}, ${dataset_string}${title_postfix})" \
+                       --y-limits "${y_limits[@]}" \
+                       --out-file "${plots_directory}/dist_estimates_comp/${metric}/${dataset}-simulation_${encoding}_${dist_estimates[0]}_vs_simulation_${encoding}_${dist_estimates[1]}-${out_file_spec}${metric}_boxplot${extension}" \
+                       --statistical-test "${statistical_test}"
+            done
         done
     done
 done
 
 
 
-echo "Box plots: k-value-based comparisons"
+echo "Box plots: k-value-based comparisons (avg on runs & no avg on runs)"
 
 first_cltd_res_file="${first_res_file}"
 second_cltd_res_file="${second_res_file}"
@@ -280,52 +298,70 @@ declare -a datasets_strings=("1a" "1b" "1c" "2" "3" "4" "5" "6" "7" "8" "9" "10"
 
 declare -a k_values=(3 5 7 9)
 
+declare -a avg_on_runs=("true" "false")
+
 declare -a dist_estimates=("avg" "diff")
 
 declare -a metrics=("jaccard_index" "average_jaccard_index")
 
-declare -a y_limits=(0.0 0.675)
-
-plots_directory="${plots_root_dir}/boxplots/k_value_based"
+declare -a y_limits=(-0.05 0.8)
 
 for k_value in "${k_values[@]}"; do
-    for metric in "${metrics[@]}"; do
-        metric_name="${metric//_/ }"
+    for avg_on_runs_flag in "${avg_on_runs[@]}"; do
+        if [ "${avg_on_runs_flag}" == "true" ]; then
+            first_avg_on_runs="--first-avg-on-runs"
+            second_avg_on_runs="--second-avg-on-runs"
+            title_postfix=""
+            plots_directory="${plots_root_dir}/boxplots/k_value_based"
+            out_file_spec=""
+            statistical_test="wilcoxon"
+        else
+            first_avg_on_runs=""
+            second_avg_on_runs=""
+            title_postfix=", no avg"
+            plots_directory="${plots_root_dir}/boxplots_no_avg_on_runs/k_value_based"
+            out_file_spec="no_avg_on_runs-"
+            statistical_test="ranksums"
+        fi
 
-        # encodings comparison
-        for dist_estimate in "${dist_estimates[@]}"; do
-            python visualization/generate_boxplot.py \
-                   --first-cltd-res-file "${first_cltd_res_file}" --first-exec-type "local_simulation" \
-                   --first-encodings "${encodings[0]}" --first-datasets "${datasets[@]}" --first-kvalues "${k_value}" \
-                   --first-avg-on-runs --first-dist-estimate "${dist_estimate}" \
-                   --second-cltd-res-file "${second_cltd_res_file}" --second-exec-type "local_simulation" \
-                   --second-encodings "${encodings[1]}" --second-datasets "${datasets[@]}" --second-kvalues "${k_value}" \
-                   --second-avg-on-runs --second-dist-estimate "${dist_estimate}" \
-                   --metric "${metric}" --x-axis-prop "dataset" \
-                   --legend-labels "${encodings[@]}" --x-ticks-labels "${datasets_strings[@]}"  \
-                   --x-label "dataset" --y-label "${metric_name}" \
-                   --title "'${metric_name^}' distribution on different datasets (simulation, ${dist_estimate}, k=${k_value})" \
-                   --y-limits "${y_limits[@]}" \
-                   --out-file "${plots_directory}/encodings_comp/${metric}/k_${k_value}-simulation_${encodings[0]}_${dist_estimate}_vs_simulation_${encodings[1]}_${dist_estimate}-${metric}_boxplot${extension}" \
-                   --statistical-test "wilcoxon"
-        done
+        for metric in "${metrics[@]}"; do
+            metric_name="${metric//_/ }"
 
-        # distance estimates comparison
-        for encoding in "${encodings[@]}"; do
-            python visualization/generate_boxplot.py \
-                   --first-cltd-res-file "${first_cltd_res_file}" --first-exec-type "local_simulation" \
-                   --first-encodings "${encoding}" --first-datasets "${datasets[@]}" --first-kvalues "${k_value}" \
-                   --first-avg-on-runs --first-dist-estimate "${dist_estimates[0]}" \
-                   --second-cltd-res-file "${second_cltd_res_file}" --second-exec-type "local_simulation" \
-                   --second-encodings "${encoding}" --second-datasets "${datasets[@]}" --second-kvalues "${k_value}" \
-                   --second-avg-on-runs --second-dist-estimate "${dist_estimates[1]}" \
-                   --metric "${metric}" --x-axis-prop "dataset" \
-                   --legend-labels "${dist_estimates[@]}" --x-ticks-labels "${datasets_strings[@]}"  \
-                   --x-label "dataset" --y-label "${metric_name}" \
-                   --title "'${metric_name^}' distribution on different datasets (simulation, ${encoding}, k=${k_value})" \
-                   --y-limits "${y_limits[@]}" \
-                   --out-file "${plots_directory}/dist_estimates_comp/${metric}/k_${k_value}-simulation_${encoding}_${dist_estimates[0]}_vs_simulation_${encoding}_${dist_estimates[1]}-${metric}_boxplot${extension}" \
-                   --statistical-test "wilcoxon"
+            # encodings comparison
+            for dist_estimate in "${dist_estimates[@]}"; do
+                python visualization/generate_boxplot.py \
+                       --first-cltd-res-file "${first_cltd_res_file}" --first-exec-type "local_simulation" \
+                       --first-encodings "${encodings[0]}" --first-datasets "${datasets[@]}" --first-kvalues "${k_value}" \
+                       ${first_avg_on_runs} --first-dist-estimate "${dist_estimate}" \
+                       --second-cltd-res-file "${second_cltd_res_file}" --second-exec-type "local_simulation" \
+                       --second-encodings "${encodings[1]}" --second-datasets "${datasets[@]}" --second-kvalues "${k_value}" \
+                       ${second_avg_on_runs} --second-dist-estimate "${dist_estimate}" \
+                       --metric "${metric}" --x-axis-prop "dataset" \
+                       --legend-labels "${encodings[@]}" --x-ticks-labels "${datasets_strings[@]}"  \
+                       --x-label "dataset" --y-label "${metric_name}" \
+                       --title "'${metric_name^}' distribution on different datasets (simulation, ${dist_estimate}, k=${k_value}${title_postfix})" \
+                       --y-limits "${y_limits[@]}" \
+                       --out-file "${plots_directory}/encodings_comp/${metric}/k_${k_value}-simulation_${encodings[0]}_${dist_estimate}_vs_simulation_${encodings[1]}_${dist_estimate}-${out_file_spec}${metric}_boxplot${extension}" \
+                       --statistical-test "${statistical_test}"
+            done
+
+            # distance estimates comparison
+            for encoding in "${encodings[@]}"; do
+                python visualization/generate_boxplot.py \
+                       --first-cltd-res-file "${first_cltd_res_file}" --first-exec-type "local_simulation" \
+                       --first-encodings "${encoding}" --first-datasets "${datasets[@]}" --first-kvalues "${k_value}" \
+                       ${first_avg_on_runs} --first-dist-estimate "${dist_estimates[0]}" \
+                       --second-cltd-res-file "${second_cltd_res_file}" --second-exec-type "local_simulation" \
+                       --second-encodings "${encoding}" --second-datasets "${datasets[@]}" --second-kvalues "${k_value}" \
+                       ${second_avg_on_runs} --second-dist-estimate "${dist_estimates[1]}" \
+                       --metric "${metric}" --x-axis-prop "dataset" \
+                       --legend-labels "${dist_estimates[@]}" --x-ticks-labels "${datasets_strings[@]}"  \
+                       --x-label "dataset" --y-label "${metric_name}" \
+                       --title "'${metric_name^}' distribution on different datasets (simulation, ${encoding}, k=${k_value}${title_postfix})" \
+                       --y-limits "${y_limits[@]}" \
+                       --out-file "${plots_directory}/dist_estimates_comp/${metric}/k_${k_value}-simulation_${encoding}_${dist_estimates[0]}_vs_simulation_${encoding}_${dist_estimates[1]}-${out_file_spec}${metric}_boxplot${extension}" \
+                       --statistical-test "${statistical_test}"
+            done
         done
     done
 done
