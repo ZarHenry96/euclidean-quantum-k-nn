@@ -12,14 +12,14 @@ echo "Scatter plots: execution types comparison"
 cltd_res_file_x="${first_res_file}"
 cltd_res_file_y="${second_res_file}"
 
-declare -a exec_type_x=("classical"   "classical"   "statevector"      "statevector"      "statevector"      "statevector")
-declare -a exec_type_y=("statevector" "statevector" "local_simulation" "local_simulation" "local_simulation" "local_simulation")
+declare -a exec_type_x=("classical"   "classical"   "classical"   "classical"   "statevector"      "statevector"      "statevector"      "statevector")
+declare -a exec_type_y=("statevector" "statevector" "statevector" "statevector" "local_simulation" "local_simulation" "local_simulation" "local_simulation")
 
-declare -a encoding_x=("classical" "classical"   "extension" "extension" "translation" "translation")
-declare -a encoding_y=("extension" "translation" "extension" "extension" "translation" "translation")
+declare -a encoding_x=("classical" "classical" "classical"   "classical"   "extension" "extension" "translation" "translation")
+declare -a encoding_y=("extension" "extension" "translation" "translation" "extension" "extension" "translation" "translation")
 
-declare -a dist_estimate_x=("exact" "exact" "avg" "diff" "avg" "diff")
-declare -a dist_estimate_y=("avg"   "avg"   "avg" "diff" "avg" "diff")
+declare -a dist_estimate_x=("exact" "exact" "exact" "exact" "avg" "diff" "avg" "diff")
+declare -a dist_estimate_y=("avg"   "diff"  "avg"   "diff"  "avg" "diff" "avg" "diff")
 
 declare -a metrics=("accuracy" "jaccard_index" "average_jaccard_index")
 
@@ -161,6 +161,40 @@ done
 
 
 
+echo "Scatter plots: extra comparisons"
+
+cltd_res_file_x="${first_res_file}"
+cltd_res_file_y="${second_res_file}"
+
+declare -a dist_estimate_x=("avg" "diff")
+declare -a dist_estimate_y=("diff" "avg")
+
+declare -a metrics=("accuracy" "jaccard_index" "average_jaccard_index")
+
+plots_directory="${plots_root_dir}/scatterplots/extra_comp"
+
+last_dist_estimate_index=$((${#dist_estimate_x[@]} - 1))
+for i in $(seq 0 ${last_dist_estimate_index}); do
+    for metric in "${metrics[@]}"; do
+        metric_name="${metric//_/ }"
+
+        python visualization/generate_scatterplot.py \
+            --x-cltd-res-file "${cltd_res_file_x}" --x-exec-type "local_simulation" --x-encodings "extension" \
+            --x-kvalues 3 5 7 9 --x-avg-on-runs --x-dist-estimate "${dist_estimate_x[i]}" --x-partition-key "k" \
+            --y-cltd-res-file "${cltd_res_file_y}" --y-exec-type "local_simulation" --y-encodings "translation" \
+            --y-kvalues 3 5 7 9 --y-avg-on-runs --y-dist-estimate "${dist_estimate_y[i]}" --y-partition-key "k" \
+            --metric "${metric}" \
+            --legend-labels "k=3" "k=5" "k=7" "k=9" \
+            --x-label "extension, ${dist_estimate_x[i]} (simulation)" \
+            --y-label "translation, ${dist_estimate_y[i]} (simulation)" \
+            --title "Extra comparison in '${metric_name}'" \
+            --out-file "${plots_directory}/${metric}/simulation_extension_${dist_estimate_x[i]}_vs_simulation_translation_${dist_estimate_y[i]}-${metric}_scatterplot${extension}" \
+            --statistical-test "wilcoxon"
+    done
+done
+
+
+
 echo "Box plots: dataset-based comparisons"
 
 first_cltd_res_file="${first_res_file}"
@@ -294,4 +328,43 @@ for k_value in "${k_values[@]}"; do
                    --statistical-test "wilcoxon"
         done
     done
+done
+
+
+
+echo "Scatter plots: comparisons with baseline methods"
+
+cltd_res_file_x="results/qml_pipeline_paper_results/baseline_collected_results.json"
+cltd_res_file_y="${second_res_file}"
+
+declare -a baseline_methods=("knn_cosine" "random_forest" "svm_linear" "svm_rbf")
+
+declare -a exec_types=("statevector" "local_simulation")
+declare -a encodings=("translation")
+declare -a dist_estimates=("avg")
+
+plots_directory="${plots_root_dir}/scatterplots/baseline_qknn_comp"
+
+for baseline_method in "${baseline_methods[@]}"; do
+    baseline_method_name="${baseline_method//rbf/gaussian}"
+    baseline_method_name="${baseline_method_name//_/ }"
+
+    for exec_type in "${exec_types[@]}"; do
+        exec_type_name="${exec_type//local_simulation/simulation}"
+
+        for encoding in "${encodings[@]}"; do
+            for dist_estimate in "${dist_estimates[@]}"; do
+                    python visualization/generate_scatterplot.py \
+                        --x-cltd-res-file "${cltd_res_file_x}" --x-exec-type "${baseline_method}" --x-encodings "_" \
+                        --x-kvalues 3 5 7 9 --x-avg-on-runs --x-dist-estimate "_" --x-partition-key "k" \
+                        --y-cltd-res-file "${cltd_res_file_y}" --y-exec-type "${exec_type}" --y-encodings "${encoding}" \
+                        --y-kvalues 3 5 7 9 --y-avg-on-runs --y-dist-estimate "${dist_estimate}" --y-partition-key "k" \
+                        --metric "accuracy" --legend-labels "k=3" "k=5" "k=7" "k=9" \
+                        --x-label "${baseline_method_name}" --y-label "${exec_type_name}, ${encoding}, ${dist_estimate}" \
+                        --title "Comparison with a baseline method in 'accuracy'" \
+                        --out-file "${plots_directory}/accuracy/${baseline_method}_vs_${exec_type}_${encoding}_${dist_estimate}-accuracy_scatterplot${extension}" \
+                        --statistical-test "wilcoxon"
+                done
+            done
+        done
 done
