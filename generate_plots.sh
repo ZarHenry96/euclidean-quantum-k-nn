@@ -15,6 +15,7 @@ dataset_based_box="false"
 k_value_based_box="false"
 baseline_comp_scatter="false"
 diff_num_shots_exec_types_comp_scatter="false"
+diff_nums_shots_comp_scatter="false"
 
 
 if [ "${exec_types_comp_scatter}" == "true" ]; then
@@ -229,9 +230,9 @@ if [ "${dataset_based_box}" == "true" ]; then
 
     declare -a dist_estimates=("avg" "diff")
 
-    declare -a metrics=("jaccard_index" "average_jaccard_index")
+    declare -a metrics=("accuracy" "jaccard_index" "average_jaccard_index")
 
-    declare -a y_limits=(-0.05 0.8)
+    declare -a y_limits=(-0.05 1.05)
 
     last_dataset_index=$((${#datasets[@]} - 1))
     for i in $(seq 0 ${last_dataset_index}); do
@@ -258,6 +259,11 @@ if [ "${dataset_based_box}" == "true" ]; then
             for metric in "${metrics[@]}"; do
                 metric_name="${metric//_/ }"
 
+                legend_position="upper left"
+                if [ "${metric}" == "accuracy" ]; then
+                    legend_position="lower left"
+                fi
+
                 # encodings comparison
                 for dist_estimate in "${dist_estimates[@]}"; do
                     python visualization/generate_boxplot.py \
@@ -268,8 +274,8 @@ if [ "${dataset_based_box}" == "true" ]; then
                            --second-encodings "${encodings[1]}" --second-datasets "${dataset}" --second-kvalues "${k_values[@]}" \
                            ${second_avg_on_runs} --second-dist-estimate "${dist_estimate}" \
                            --metric "${metric}" --x-axis-prop "k" \
-                           --legend-labels "${encodings[@]}" --x-ticks-labels "${k_values_strings[@]}"  \
-                           --x-label "k value" --y-label "${metric_name}" \
+                           --legend-labels "${encodings[@]}" --legend-position "${legend_position}" \
+                           --x-ticks-labels "${k_values_strings[@]}"  --x-label "k value" --y-label "${metric_name}" \
                            --title "'${metric_name^}' distribution for different k values (sim., ${dist_estimate}, ${dataset_string}${title_postfix})" \
                            --y-limits "${y_limits[@]}" \
                            --out-file "${plots_directory}/encodings_comp/${metric}/${dataset}-simulation_${encodings[0]}_${dist_estimate}_vs_simulation_${encodings[1]}_${dist_estimate}-${out_file_spec}${metric}_boxplot${extension}" \
@@ -286,8 +292,8 @@ if [ "${dataset_based_box}" == "true" ]; then
                            --second-encodings "${encoding}" --second-datasets "${dataset}" --second-kvalues "${k_values[@]}" \
                            ${second_avg_on_runs} --second-dist-estimate "${dist_estimates[1]}" \
                            --metric "${metric}" --x-axis-prop "k" \
-                           --legend-labels "${dist_estimates[@]}" --x-ticks-labels "${k_values_strings[@]}"  \
-                           --x-label "k value" --y-label "${metric_name}" \
+                           --legend-labels "${dist_estimates[@]}" --legend-position "${legend_position}"\
+                           --x-ticks-labels "${k_values_strings[@]}"  --x-label "k value" --y-label "${metric_name}" \
                            --title "'${metric_name^}' distribution for different k values (sim., ${encoding}, ${dataset_string}${title_postfix})" \
                            --y-limits "${y_limits[@]}" \
                            --out-file "${plots_directory}/dist_estimates_comp/${metric}/${dataset}-simulation_${encoding}_${dist_estimates[0]}_vs_simulation_${encoding}_${dist_estimates[1]}-${out_file_spec}${metric}_boxplot${extension}" \
@@ -318,9 +324,9 @@ if [ "${k_value_based_box}" == "true" ]; then
 
     declare -a dist_estimates=("avg" "diff")
 
-    declare -a metrics=("jaccard_index" "average_jaccard_index")
+    declare -a metrics=("accuracy" "jaccard_index" "average_jaccard_index")
 
-    declare -a y_limits=(-0.05 0.8)
+    declare -a y_limits=(-0.05 1.05)
 
     for k_value in "${k_values[@]}"; do
         for avg_on_runs_flag in "${avg_on_runs[@]}"; do
@@ -343,6 +349,11 @@ if [ "${k_value_based_box}" == "true" ]; then
             for metric in "${metrics[@]}"; do
                 metric_name="${metric//_/ }"
 
+                legend_position="upper left"
+                if [ "${metric}" == "accuracy" ]; then
+                    legend_position="lower left"
+                fi
+
                 # encodings comparison
                 for dist_estimate in "${dist_estimates[@]}"; do
                     python visualization/generate_boxplot.py \
@@ -353,8 +364,8 @@ if [ "${k_value_based_box}" == "true" ]; then
                            --second-encodings "${encodings[1]}" --second-datasets "${datasets[@]}" --second-kvalues "${k_value}" \
                            ${second_avg_on_runs} --second-dist-estimate "${dist_estimate}" \
                            --metric "${metric}" --x-axis-prop "dataset" \
-                           --legend-labels "${encodings[@]}" --x-ticks-labels "${datasets_strings[@]}"  \
-                           --x-label "dataset" --y-label "${metric_name}" \
+                           --legend-labels "${encodings[@]}" --legend-position "${legend_position}" \
+                           --x-ticks-labels "${datasets_strings[@]}"  --x-label "dataset" --y-label "${metric_name}" \
                            --title "'${metric_name^}' distribution on different datasets (simulation, ${dist_estimate}, k=${k_value}${title_postfix})" \
                            --y-limits "${y_limits[@]}" \
                            --out-file "${plots_directory}/encodings_comp/${metric}/k_${k_value}-simulation_${encodings[0]}_${dist_estimate}_vs_simulation_${encodings[1]}_${dist_estimate}-${out_file_spec}${metric}_boxplot${extension}" \
@@ -371,8 +382,8 @@ if [ "${k_value_based_box}" == "true" ]; then
                            --second-encodings "${encoding}" --second-datasets "${datasets[@]}" --second-kvalues "${k_value}" \
                            ${second_avg_on_runs} --second-dist-estimate "${dist_estimates[1]}" \
                            --metric "${metric}" --x-axis-prop "dataset" \
-                           --legend-labels "${dist_estimates[@]}" --x-ticks-labels "${datasets_strings[@]}"  \
-                           --x-label "dataset" --y-label "${metric_name}" \
+                           --legend-labels "${dist_estimates[@]}" --legend-position "${legend_position}" \
+                           --x-ticks-labels "${datasets_strings[@]}"  --x-label "dataset" --y-label "${metric_name}" \
                            --title "'${metric_name^}' distribution on different datasets (simulation, ${encoding}, k=${k_value}${title_postfix})" \
                            --y-limits "${y_limits[@]}" \
                            --out-file "${plots_directory}/dist_estimates_comp/${metric}/k_${k_value}-simulation_${encoding}_${dist_estimates[0]}_vs_simulation_${encoding}_${dist_estimates[1]}-${out_file_spec}${metric}_boxplot${extension}" \
@@ -465,6 +476,66 @@ if [ "${diff_num_shots_exec_types_comp_scatter}" == "true" ]; then
                            --title "Exec. types comp. in '${metric_name}' (${num_shots} shots)" \
                            --out-file "${plots_directory}/${metric}/statevector_${encoding}_${dist_estimate}_vs_simulation_${encoding}_${dist_estimate}-${num_shots_out_file_spec}_shots-${metric}_scatterplot${extension}" \
                            --statistical-test "wilcoxon"
+                done
+            done
+        done
+    done
+fi
+
+
+if [ "${diff_nums_shots_comp_scatter}" == "true" ]; then
+    echo "Scatter plots: different numbers of shots comparison"
+
+    declare -a encodings=("extension")
+    declare -a dist_estimates=("avg")
+
+    declare -a num_shots_list=(512 1024 2048 4096 8192)
+    last_num_shots_index=$((${#num_shots_list[@]} - 1))
+
+    declare -a metrics=("accuracy" "jaccard_index" "average_jaccard_index")
+
+    plots_directory="${plots_root_dir}/scatterplots/diff_nums_shots_comp"
+
+    for encoding in "${encodings[@]}"; do
+        for dist_estimate in "${dist_estimates[@]}"; do
+            for i in $(seq 0 ${last_num_shots_index}); do
+                num_shots_x="${num_shots_list[i]}"
+
+                cltd_res_file_x="${num_shots_res_file//#/${num_shots_x}}"
+                num_shots_x_out_file_spec="${num_shots_x}"
+                if (( num_shots_x == 512 )); then
+                    num_shots_x_out_file_spec="0${num_shots_x_out_file_spec}"
+                elif (( num_shots_x == 1024 )); then
+                    cltd_res_file_x="${exps_res_file}"
+                fi
+
+                for j in $(seq $((i + 1)) ${last_num_shots_index}); do
+                    num_shots_y="${num_shots_list[j]}"
+
+                    cltd_res_file_y="${num_shots_res_file//#/${num_shots_y}}"
+                    num_shots_y_out_file_spec="${num_shots_y}"
+                    if (( num_shots_y == 512 )); then
+                        num_shots_y_out_file_spec="0${num_shots_y_out_file_spec}"
+                    elif (( num_shots_y == 1024 )); then
+                        cltd_res_file_y="${exps_res_file}"
+                    fi
+
+                    for metric in "${metrics[@]}"; do
+                        metric_name="${metric//_/ }"
+
+                        python visualization/generate_scatterplot.py \
+                               --x-cltd-res-file "${cltd_res_file_x}" --x-exec-type "local_simulation" --x-encodings "${encoding}" \
+                               --x-kvalues 3 5 7 9 --x-avg-on-runs --x-dist-estimate "${dist_estimate}" --x-partition-key "k" \
+                               --y-cltd-res-file "${cltd_res_file_y}" --y-exec-type "local_simulation" --y-encodings "${encoding}" \
+                               --y-kvalues 3 5 7 9 --y-avg-on-runs --y-dist-estimate "${dist_estimate}" --y-partition-key "k" \
+                               --metric "${metric}" \
+                               --legend-labels "k=3" "k=5" "k=7" "k=9" \
+                               --x-label "simulation, ${num_shots_x} shots (${encoding}, ${dist_estimate})" \
+                               --y-label "simulation, ${num_shots_y} shots (${encoding}, ${dist_estimate})" \
+                               --title "Diff. numbers of shots comparison in '${metric_name}'" \
+                               --out-file "${plots_directory}/${metric}/simulation_${encoding}_${dist_estimate}_${num_shots_x_out_file_spec}_shots_vs_simulation_${encoding}_${dist_estimate}_${num_shots_y_out_file_spec}_shots-${metric}_scatterplot${extension}" \
+                               --statistical-test "wilcoxon"
+                    done
                 done
             done
         done
