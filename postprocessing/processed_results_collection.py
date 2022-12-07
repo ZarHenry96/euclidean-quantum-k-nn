@@ -11,8 +11,8 @@ def collect_processed_results(root_res_dir, exec_times_too=True):
     # Iterate over 'exec_type' directories
     for exec_type in sorted(os.listdir(root_res_dir)):
         exec_type_dir = os.path.join(root_res_dir, exec_type)
-        # Check if it is a directory
-        if os.path.isdir(exec_type_dir):
+        # Check if it is a directory (and it is not the plots directory)
+        if os.path.isdir(exec_type_dir) and exec_type != 'plots':
             collected_res[exec_type] = {}
             exec_times[exec_type] = {}
 

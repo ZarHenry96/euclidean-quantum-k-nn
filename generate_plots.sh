@@ -243,14 +243,14 @@ if [ "${dataset_based_box}" == "true" ]; then
             if [ "${avg_on_runs_flag}" == "true" ]; then
                 first_avg_on_runs="--first-avg-on-runs"
                 second_avg_on_runs="--second-avg-on-runs"
-                title_postfix=""
+                title_suffix=""
                 plots_directory="${plots_root_dir}/boxplots/dataset_based"
                 out_file_spec=""
                 statistical_test="wilcoxon"
             else
                 first_avg_on_runs=""
                 second_avg_on_runs=""
-                title_postfix=", no avg"
+                title_suffix=", no avg"
                 plots_directory="${plots_root_dir}/boxplots_no_avg_on_runs/dataset_based"
                 out_file_spec="no_avg_on_runs-"
                 statistical_test="ranksums"
@@ -276,7 +276,7 @@ if [ "${dataset_based_box}" == "true" ]; then
                            --metric "${metric}" --x-axis-prop "k" \
                            --legend-labels "${encodings[@]}" --legend-position "${legend_position}" \
                            --x-ticks-labels "${k_values_strings[@]}"  --x-label "k value" --y-label "${metric_name}" \
-                           --title "'${metric_name^}' distribution for different k values (sim., ${dist_estimate}, ${dataset_string}${title_postfix})" \
+                           --title "'${metric_name^}' distribution for different k values (sim., ${dist_estimate}, ${dataset_string}${title_suffix})" \
                            --y-limits "${y_limits[@]}" \
                            --out-file "${plots_directory}/encodings_comp/${metric}/${dataset}-simulation_${encodings[0]}_${dist_estimate}_vs_simulation_${encodings[1]}_${dist_estimate}-${out_file_spec}${metric}_boxplot${extension}" \
                            --statistical-test "${statistical_test}"
@@ -294,7 +294,7 @@ if [ "${dataset_based_box}" == "true" ]; then
                            --metric "${metric}" --x-axis-prop "k" \
                            --legend-labels "${dist_estimates[@]}" --legend-position "${legend_position}"\
                            --x-ticks-labels "${k_values_strings[@]}"  --x-label "k value" --y-label "${metric_name}" \
-                           --title "'${metric_name^}' distribution for different k values (sim., ${encoding}, ${dataset_string}${title_postfix})" \
+                           --title "'${metric_name^}' distribution for different k values (sim., ${encoding}, ${dataset_string}${title_suffix})" \
                            --y-limits "${y_limits[@]}" \
                            --out-file "${plots_directory}/dist_estimates_comp/${metric}/${dataset}-simulation_${encoding}_${dist_estimates[0]}_vs_simulation_${encoding}_${dist_estimates[1]}-${out_file_spec}${metric}_boxplot${extension}" \
                            --statistical-test "${statistical_test}"
@@ -333,14 +333,14 @@ if [ "${k_value_based_box}" == "true" ]; then
             if [ "${avg_on_runs_flag}" == "true" ]; then
                 first_avg_on_runs="--first-avg-on-runs"
                 second_avg_on_runs="--second-avg-on-runs"
-                title_postfix=""
+                title_suffix=""
                 plots_directory="${plots_root_dir}/boxplots/k_value_based"
                 out_file_spec=""
                 statistical_test="wilcoxon"
             else
                 first_avg_on_runs=""
                 second_avg_on_runs=""
-                title_postfix=", no avg"
+                title_suffix=", no avg"
                 plots_directory="${plots_root_dir}/boxplots_no_avg_on_runs/k_value_based"
                 out_file_spec="no_avg_on_runs-"
                 statistical_test="ranksums"
@@ -366,7 +366,7 @@ if [ "${k_value_based_box}" == "true" ]; then
                            --metric "${metric}" --x-axis-prop "dataset" \
                            --legend-labels "${encodings[@]}" --legend-position "${legend_position}" \
                            --x-ticks-labels "${datasets_strings[@]}"  --x-label "dataset" --y-label "${metric_name}" \
-                           --title "'${metric_name^}' distribution on different datasets (simulation, ${dist_estimate}, k=${k_value}${title_postfix})" \
+                           --title "'${metric_name^}' distribution on different datasets (simulation, ${dist_estimate}, k=${k_value}${title_suffix})" \
                            --y-limits "${y_limits[@]}" \
                            --out-file "${plots_directory}/encodings_comp/${metric}/k_${k_value}-simulation_${encodings[0]}_${dist_estimate}_vs_simulation_${encodings[1]}_${dist_estimate}-${out_file_spec}${metric}_boxplot${extension}" \
                            --statistical-test "${statistical_test}"
@@ -384,7 +384,7 @@ if [ "${k_value_based_box}" == "true" ]; then
                            --metric "${metric}" --x-axis-prop "dataset" \
                            --legend-labels "${dist_estimates[@]}" --legend-position "${legend_position}" \
                            --x-ticks-labels "${datasets_strings[@]}"  --x-label "dataset" --y-label "${metric_name}" \
-                           --title "'${metric_name^}' distribution on different datasets (simulation, ${encoding}, k=${k_value}${title_postfix})" \
+                           --title "'${metric_name^}' distribution on different datasets (simulation, ${encoding}, k=${k_value}${title_suffix})" \
                            --y-limits "${y_limits[@]}" \
                            --out-file "${plots_directory}/dist_estimates_comp/${metric}/k_${k_value}-simulation_${encoding}_${dist_estimates[0]}_vs_simulation_${encoding}_${dist_estimates[1]}-${out_file_spec}${metric}_boxplot${extension}" \
                            --statistical-test "${statistical_test}"
