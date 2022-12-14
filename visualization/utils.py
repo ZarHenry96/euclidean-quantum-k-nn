@@ -102,14 +102,14 @@ def get_adaptive_limits(first_data_list, second_data_list, percentage=0.05, deci
     return [round(min_value - abs_diff * percentage, decimals), round(max_value + abs_diff * percentage, decimals)]
 
 
-def compute_statistic(statistical_test, first_data_list, second_data_list):
+def compute_statistic(statistical_test, first_data_list, second_data_list, alternative="two-sided"):
     if statistical_test == 'ranksums':
-        statistic, p_value = ranksums(first_data_list, second_data_list)
+        statistic, p_value = ranksums(first_data_list, second_data_list, alternative=alternative)
     elif statistical_test == 'mannwhitneyu':
-        statistic, p_value = mannwhitneyu(first_data_list, second_data_list)
+        statistic, p_value = mannwhitneyu(first_data_list, second_data_list, alternative=alternative)
     elif statistical_test == 'wilcoxon':
         if np.any(np.array(first_data_list) - np.array(second_data_list)):  # there is at least one different element
-            statistic, p_value = wilcoxon(first_data_list, second_data_list)
+            statistic, p_value = wilcoxon(first_data_list, second_data_list, alternative=alternative)
         else:
             statistic, p_value = None, 1
     else:

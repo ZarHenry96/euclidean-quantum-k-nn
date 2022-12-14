@@ -72,20 +72,34 @@ def generate_scatterplot(x_data, y_data, legend_labels, legend_position, x_label
 
 def compute_scatter_statistics(x_data, y_data, legend_labels, statistical_test, statistics_out_file):
     with open(statistics_out_file, 'w') as sof:
-        sof.write('statistical_test,legend_label,statistic,p_value,is_significant,x_better_times,y_better_times,'
-                  'draws\n')
+        sof.write('statistical_test,legend_label,two_sided_statistic,two_sided_p_value,two_sided_is_significant,'
+                  'x_greater_statistic,x_greater_p_value,x_greater_is_significant,'
+                  'x_less_statistic,x_less_p_value,x_less_is_significant,'
+                  'x_greater_times,y_greater_times,draws\n')
 
         for i, (x_vals, y_vals) in enumerate(zip(x_data, y_data)):
             legend_label = legend_labels[i] if len(legend_labels) != 0 else None
 
-            statistic, p_value, is_significant = compute_statistic(statistical_test, x_vals, y_vals)
+            two_sided_statistic, two_sided_p_value, two_sided_is_significant = \
+                compute_statistic(statistical_test, x_vals, y_vals)
 
-            x_better_times = len([j for j in range(0, len(x_vals)) if x_vals[j] > y_vals[j]])
-            y_better_times = len([j for j in range(0, len(x_vals)) if x_vals[j] < y_vals[j]])
+            x_greater_statistic, x_greater_p_value, x_greater_is_significant = None, None, None
+            x_less_statistic, x_less_p_value, x_less_is_significant = None, None, None
+            if two_sided_is_significant:
+                x_greater_statistic, x_greater_p_value, x_greater_is_significant = \
+                    compute_statistic(statistical_test, x_vals, y_vals, alternative="greater")
+                x_less_statistic, x_less_p_value, x_less_is_significant = \
+                    compute_statistic(statistical_test, x_vals, y_vals, alternative="less")
+
+            x_greater_times = len([j for j in range(0, len(x_vals)) if x_vals[j] > y_vals[j]])
+            y_greater_times = len([j for j in range(0, len(x_vals)) if x_vals[j] < y_vals[j]])
             draws = len([j for j in range(0, len(x_vals)) if x_vals[j] == y_vals[j]])
 
-            sof.write('{},{},{},{},{},{},{},{}\n'.format(statistical_test, legend_label, statistic, p_value,
-                                                         is_significant, x_better_times, y_better_times, draws))
+            sof.write('{},{},{},{},{},{},{},{},{},{},{},{},{},{}\n'.format(
+                statistical_test, legend_label, two_sided_statistic, two_sided_p_value, two_sided_is_significant,
+                x_greater_statistic, x_greater_p_value, x_greater_is_significant, x_less_statistic,
+                x_less_p_value, x_less_is_significant, x_greater_times, y_greater_times, draws
+            ))
 
 
 def main(x_cltd_res_file, x_exec_type, x_encodings, x_datasets, x_kvalues, x_avg_on_runs, x_dist_estimate,
