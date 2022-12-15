@@ -14,8 +14,8 @@ extra_comp_scatter="true"
 dataset_based_box="false"
 k_value_based_box="false"
 baseline_comp_scatter="false"
-diff_num_shots_exec_types_comp_scatter="false"
-diff_nums_shots_comp_scatter="false"
+diff_nums_shots_exec_types_comp_scatter="false"
+nums_shots_comp_scatter="false"
 
 
 if [ "${exec_types_comp_scatter}" == "true" ]; then
@@ -278,8 +278,7 @@ if [ "${dataset_based_box}" == "true" ]; then
                            --x-ticks-labels "${k_values_strings[@]}"  --x-label "k value" --y-label "${metric_name}" \
                            --title "'${metric_name^}' distribution for different k values (sim., ${dist_estimate}, ${dataset_string}${title_suffix})" \
                            --y-limits "${y_limits[@]}" \
-                           --out-file "${plots_directory}/encodings_comp/${metric}/${dataset}-simulation_${encodings[0]}_${dist_estimate}_vs_simulation_${encodings[1]}_${dist_estimate}-${out_file_spec}${metric}_boxplot${extension}" \
-                           --statistical-test "${statistical_test}"
+                           --out-file "${plots_directory}/encodings_comp/${metric}/${dataset}-simulation_${encodings[0]}_${dist_estimate}_vs_simulation_${encodings[1]}_${dist_estimate}-${out_file_spec}${metric}_boxplot${extension}"
                 done
 
                 # distance estimates comparison
@@ -296,8 +295,7 @@ if [ "${dataset_based_box}" == "true" ]; then
                            --x-ticks-labels "${k_values_strings[@]}"  --x-label "k value" --y-label "${metric_name}" \
                            --title "'${metric_name^}' distribution for different k values (sim., ${encoding}, ${dataset_string}${title_suffix})" \
                            --y-limits "${y_limits[@]}" \
-                           --out-file "${plots_directory}/dist_estimates_comp/${metric}/${dataset}-simulation_${encoding}_${dist_estimates[0]}_vs_simulation_${encoding}_${dist_estimates[1]}-${out_file_spec}${metric}_boxplot${extension}" \
-                           --statistical-test "${statistical_test}"
+                           --out-file "${plots_directory}/dist_estimates_comp/${metric}/${dataset}-simulation_${encoding}_${dist_estimates[0]}_vs_simulation_${encoding}_${dist_estimates[1]}-${out_file_spec}${metric}_boxplot${extension}"
                 done
             done
         done
@@ -368,8 +366,7 @@ if [ "${k_value_based_box}" == "true" ]; then
                            --x-ticks-labels "${datasets_strings[@]}"  --x-label "dataset" --y-label "${metric_name}" \
                            --title "'${metric_name^}' distribution on different datasets (simulation, ${dist_estimate}, k=${k_value}${title_suffix})" \
                            --y-limits "${y_limits[@]}" \
-                           --out-file "${plots_directory}/encodings_comp/${metric}/k_${k_value}-simulation_${encodings[0]}_${dist_estimate}_vs_simulation_${encodings[1]}_${dist_estimate}-${out_file_spec}${metric}_boxplot${extension}" \
-                           --statistical-test "${statistical_test}"
+                           --out-file "${plots_directory}/encodings_comp/${metric}/k_${k_value}-simulation_${encodings[0]}_${dist_estimate}_vs_simulation_${encodings[1]}_${dist_estimate}-${out_file_spec}${metric}_boxplot${extension}"
                 done
 
                 # distance estimates comparison
@@ -386,8 +383,7 @@ if [ "${k_value_based_box}" == "true" ]; then
                            --x-ticks-labels "${datasets_strings[@]}"  --x-label "dataset" --y-label "${metric_name}" \
                            --title "'${metric_name^}' distribution on different datasets (simulation, ${encoding}, k=${k_value}${title_suffix})" \
                            --y-limits "${y_limits[@]}" \
-                           --out-file "${plots_directory}/dist_estimates_comp/${metric}/k_${k_value}-simulation_${encoding}_${dist_estimates[0]}_vs_simulation_${encoding}_${dist_estimates[1]}-${out_file_spec}${metric}_boxplot${extension}" \
-                           --statistical-test "${statistical_test}"
+                           --out-file "${plots_directory}/dist_estimates_comp/${metric}/k_${k_value}-simulation_${encoding}_${dist_estimates[0]}_vs_simulation_${encoding}_${dist_estimates[1]}-${out_file_spec}${metric}_boxplot${extension}"
                 done
             done
         done
@@ -435,8 +431,8 @@ if [ "${baseline_comp_scatter}" == "true" ]; then
 fi
 
 
-if [ "${diff_num_shots_exec_types_comp_scatter}" == "true" ]; then
-    echo "Scatter plots: execution types comparison for different number of shots"
+if [ "${diff_nums_shots_exec_types_comp_scatter}" == "true" ]; then
+    echo "Scatter plots: execution types comparison for different numbers of shots"
 
     cltd_res_file_x="${exps_res_file}"
 
@@ -483,8 +479,8 @@ if [ "${diff_num_shots_exec_types_comp_scatter}" == "true" ]; then
 fi
 
 
-if [ "${diff_nums_shots_comp_scatter}" == "true" ]; then
-    echo "Scatter plots: different numbers of shots comparison"
+if [ "${nums_shots_comp_scatter}" == "true" ]; then
+    echo "Scatter plots: numbers of shots comparison"
 
     declare -a encodings=("extension")
     declare -a dist_estimates=("avg")
@@ -494,7 +490,7 @@ if [ "${diff_nums_shots_comp_scatter}" == "true" ]; then
 
     declare -a metrics=("accuracy" "jaccard_index" "average_jaccard_index")
 
-    plots_directory="${plots_root_dir}/scatterplots/diff_nums_shots_comp"
+    plots_directory="${plots_root_dir}/scatterplots/nums_shots_comp"
 
     for encoding in "${encodings[@]}"; do
         for dist_estimate in "${dist_estimates[@]}"; do
@@ -532,7 +528,7 @@ if [ "${diff_nums_shots_comp_scatter}" == "true" ]; then
                                --legend-labels "k=3" "k=5" "k=7" "k=9" \
                                --x-label "simulation, ${num_shots_x} shots (${encoding}, ${dist_estimate})" \
                                --y-label "simulation, ${num_shots_y} shots (${encoding}, ${dist_estimate})" \
-                               --title "Diff. numbers of shots comparison in '${metric_name}'" \
+                               --title "Numbers of shots comparison in '${metric_name}'" \
                                --out-file "${plots_directory}/${metric}/simulation_${encoding}_${dist_estimate}_${num_shots_x_out_file_spec}_shots_vs_simulation_${encoding}_${dist_estimate}_${num_shots_y_out_file_spec}_shots-${metric}_scatterplot${extension}" \
                                --statistical-test "wilcoxon"
                     done
