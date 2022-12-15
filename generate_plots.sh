@@ -13,7 +13,7 @@ dist_estimates_comp_scatter="true"
 extra_comp_scatter="true"
 dataset_based_box="false"
 k_value_based_box="false"
-baseline_comp_scatter="false"
+baseline_qknn_comp_scatter="false"
 diff_nums_shots_exec_types_comp_scatter="false"
 nums_shots_comp_scatter="false"
 
@@ -391,8 +391,8 @@ if [ "${k_value_based_box}" == "true" ]; then
 fi
 
 
-if [ "${baseline_comp_scatter}" == "true" ]; then
-    echo "Scatter plots: comparisons with baseline methods"
+if [ "${baseline_qknn_comp_scatter}" == "true" ]; then
+    echo "Scatter plots: comparisons of quantum k-NN and baseline methods"
 
     cltd_res_file_x="${baseline_res_file}"
     cltd_res_file_y="${exps_res_file}"
@@ -443,7 +443,7 @@ if [ "${diff_nums_shots_exec_types_comp_scatter}" == "true" ]; then
 
     declare -a metrics=("accuracy" "jaccard_index" "average_jaccard_index")
 
-    plots_directory="${plots_root_dir}/scatterplots/diff_num_shots_exec_types_comp"
+    plots_directory="${plots_root_dir}/scatterplots/diff_nums_shots_exec_types_comp"
 
     for encoding in "${encodings[@]}"; do
         for dist_estimate in "${dist_estimates[@]}"; do
