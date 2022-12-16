@@ -181,8 +181,8 @@ def main(first_cltd_res_file, first_exec_type, first_encodings, first_datasets, 
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Script for generating boxplots for simulation experiments on '
-                                                 'the classical/quantum k-NN based on the Euclidean distance.')
+    parser = argparse.ArgumentParser(description='Script for generating boxplots for experiments on the classical/'
+                                                 'quantum k-NN based on the Euclidean distance.')
     parser.add_argument('--first-cltd-res-file', metavar='first_cltd_res_file', type=str, nargs='?', default=None,
                         help='collected_results.json file containing the first set of data for the boxplot.')
     parser.add_argument('--first-exec-type', metavar='first_exec_type', type=str, nargs='?', default=None,

@@ -16,10 +16,11 @@ k_value_based_box="false"
 baseline_qknn_comp_scatter="false"
 diff_nums_shots_exec_types_comp_scatter="false"
 nums_shots_comp_scatter="false"
+num_shots_diff_box="false"
 
 
 if [ "${exec_types_comp_scatter}" == "true" ]; then
-    echo "Scatter plots: execution types comparison"
+    echo "Scatter plots: execution types comparisons"
 
     cltd_res_file_x="${exps_res_file}"
     cltd_res_file_y="${exps_res_file}"
@@ -63,7 +64,7 @@ fi
 
 
 if [ "${encodings_comp_scatter}" == "true" ]; then
-    echo "Scatter plots: encodings comparison"
+    echo "Scatter plots: encodings comparisons"
 
     cltd_res_file_x="${exps_res_file}"
     cltd_res_file_y="${exps_res_file}"
@@ -105,7 +106,7 @@ fi
 
 
 if [ "${dist_estimates_comp_scatter}" == "true" ]; then
-    echo "Scatter plots: distance estimates comparison"
+    echo "Scatter plots: distance estimates comparisons"
 
     cltd_res_file_x="${exps_res_file}"
     cltd_res_file_y="${exps_res_file}"
@@ -432,7 +433,7 @@ fi
 
 
 if [ "${diff_nums_shots_exec_types_comp_scatter}" == "true" ]; then
-    echo "Scatter plots: execution types comparison for different numbers of shots"
+    echo "Scatter plots: execution types comparisons for different numbers of shots"
 
     cltd_res_file_x="${exps_res_file}"
 
@@ -480,7 +481,7 @@ fi
 
 
 if [ "${nums_shots_comp_scatter}" == "true" ]; then
-    echo "Scatter plots: numbers of shots comparison"
+    echo "Scatter plots: numbers of shots comparisons"
 
     declare -a encodings=("extension")
     declare -a dist_estimates=("avg")
@@ -533,6 +534,78 @@ if [ "${nums_shots_comp_scatter}" == "true" ]; then
                                --statistical-test "wilcoxon"
                     done
                 done
+            done
+        done
+    done
+fi
+
+
+if [ "${num_shots_diff_box}" == "true" ]; then
+    echo "Difference box plots: number-of-shots-based differences"
+
+    baseline_num_shots=512
+    baseline_cltd_res_file="${num_shots_res_file//#/${baseline_num_shots}}"
+    declare -a comp_num_shots_list=(1024 2048 4096 8192)
+
+    declare -a encodings=("extension")
+
+    declare -a datasets=("01_iris_setosa_versicolor" "01_iris_setosa_virginica" "01_iris_versicolor_virginica"
+                         "02_transfusion" "03_vertebral_column_2C" "04_seeds_1_2" "05_ecoli_cp_im" "06_glasses_1_2"
+                         "07_breast_tissue_adi_fadmasgla" "08_breast_cancer" "09_accent_recognition_uk_us" "10_leaf_11_9")
+
+    declare -a k_values=(3 5 7 9)
+
+    declare -a dist_estimates=("avg")
+
+    declare -a metrics=("accuracy" "jaccard_index" "average_jaccard_index")
+
+    plots_directory="${plots_root_dir}/diff_boxplots/num_shots"
+
+    for encoding in "${encodings[@]}"; do
+        for dist_estimate in "${dist_estimates[@]}"; do
+            baseline_args=()
+            comp_args=()
+            x_ticks_labels=()
+            for comp_num_shots in "${comp_num_shots_list[@]}"; do
+                comp_cltd_res_file="${num_shots_res_file//#/${comp_num_shots}}"
+                if (( comp_num_shots == 1024 )); then
+                    comp_cltd_res_file="${exps_res_file}"
+                fi
+
+                baseline_args+=("--baseline-cltd-res-file" "${baseline_cltd_res_file}"
+                                "--baseline-exec-type" "local_simulation"
+                                "--baseline-encodings" "${encoding}"
+                                "--baseline-datasets" "${datasets[@]}"
+                                "--baseline-kvalues" "${k_values[@]}"
+                                "--baseline-avg-on-runs"
+                                "--baseline-dist-estimate" "${dist_estimate}")
+
+                comp_args+=("--cltd-res-file" "${comp_cltd_res_file}"
+                            "--exec-type" "local_simulation"
+                            "--encodings" "${encoding}"
+                            "--datasets" "${datasets[@]}"
+                            "--kvalues" "${k_values[@]}"
+                            "--avg-on-runs"
+                            "--dist-estimate" "${dist_estimate}")
+
+                x_ticks_labels+=("${comp_num_shots}")
+            done
+
+            for metric in "${metrics[@]}"; do
+                metric_name="${metric//_/ }"
+                metric_name="${metric_name//j/J}"
+
+                y_limits=(-0.2 0.3)
+                if [ "${metric}" == "accuracy" ]; then
+                    y_limits=(-0.4 0.4)
+                fi
+
+                python visualization/generate_diff_boxplot.py "${baseline_args[@]}" "${comp_args[@]}" \
+                       --metric "${metric}" --x-ticks-labels "${x_ticks_labels[@]}" \
+                       --x-label "Number of shots compared to ${baseline_num_shots}" --y-label "Difference in avg. '${metric_name}'" \
+                       --title "Distribution of fold avg. '${metric_name}' difference w.r.t. ${baseline_num_shots}\\nshots (config: simulation, ${encoding}, ${dist_estimate})" \
+                       --y-limits "${y_limits[@]}" \
+                       --out-file "${plots_directory}/${metric}/simulation_${encoding}_${dist_estimate}-${metric}_num_shots_diff_boxplot${extension}"
             done
         done
     done
