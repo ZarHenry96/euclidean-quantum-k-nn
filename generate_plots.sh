@@ -243,19 +243,19 @@ if [ "${dataset_based_box}" == "true" ]; then
 
         for avg_on_runs_flag in "${avg_on_runs[@]}"; do
             if [ "${avg_on_runs_flag}" == "true" ]; then
-                first_avg_on_runs="--first-avg-on-runs"
-                second_avg_on_runs="--second-avg-on-runs"
+                first_avg_on_runs=("--first-avg-on-runs")
+                second_avg_on_runs=("--second-avg-on-runs")
                 title_suffix=""
                 plots_directory="${plots_root_dir}/boxplots/dataset_based"
                 out_file_spec=""
-                statistical_test="wilcoxon"
+                # statistical_test="wilcoxon"
             else
-                first_avg_on_runs=""
-                second_avg_on_runs=""
+                first_avg_on_runs=()
+                second_avg_on_runs=()
                 title_suffix=", no avg"
                 plots_directory="${plots_root_dir}/boxplots_no_avg_on_runs/dataset_based"
                 out_file_spec="no_avg_on_runs-"
-                statistical_test="ranksums"
+                # statistical_test="ranksums"
             fi
 
             for metric in "${metrics[@]}"; do
@@ -271,10 +271,10 @@ if [ "${dataset_based_box}" == "true" ]; then
                     python visualization/generate_boxplot.py \
                            --first-cltd-res-file "${first_cltd_res_file}" --first-exec-type "local_simulation" \
                            --first-encodings "${encodings[0]}" --first-datasets "${dataset}" --first-kvalues "${k_values[@]}" \
-                           ${first_avg_on_runs} --first-dist-estimate "${dist_estimate}" \
+                           "${first_avg_on_runs[@]}" --first-dist-estimate "${dist_estimate}" \
                            --second-cltd-res-file "${second_cltd_res_file}" --second-exec-type "local_simulation" \
                            --second-encodings "${encodings[1]}" --second-datasets "${dataset}" --second-kvalues "${k_values[@]}" \
-                           ${second_avg_on_runs} --second-dist-estimate "${dist_estimate}" \
+                           "${second_avg_on_runs[@]}" --second-dist-estimate "${dist_estimate}" \
                            --metric "${metric}" --x-axis-prop "k" \
                            --legend-labels "${encodings[@]}" --legend-position "${legend_position}" \
                            --x-ticks-labels "${k_values_strings[@]}"  --x-label "k value" --y-label "${metric_name}" \
@@ -288,10 +288,10 @@ if [ "${dataset_based_box}" == "true" ]; then
                     python visualization/generate_boxplot.py \
                            --first-cltd-res-file "${first_cltd_res_file}" --first-exec-type "local_simulation" \
                            --first-encodings "${encoding}" --first-datasets "${dataset}" --first-kvalues "${k_values[@]}" \
-                           ${first_avg_on_runs} --first-dist-estimate "${dist_estimates[0]}" \
+                           "${first_avg_on_runs[@]}" --first-dist-estimate "${dist_estimates[0]}" \
                            --second-cltd-res-file "${second_cltd_res_file}" --second-exec-type "local_simulation" \
                            --second-encodings "${encoding}" --second-datasets "${dataset}" --second-kvalues "${k_values[@]}" \
-                           ${second_avg_on_runs} --second-dist-estimate "${dist_estimates[1]}" \
+                           "${second_avg_on_runs[@]}" --second-dist-estimate "${dist_estimates[1]}" \
                            --metric "${metric}" --x-axis-prop "k" \
                            --legend-labels "${dist_estimates[@]}" --legend-position "${legend_position}"\
                            --x-ticks-labels "${k_values_strings[@]}"  --x-label "k value" --y-label "${metric_name}" \
@@ -331,19 +331,19 @@ if [ "${k_value_based_box}" == "true" ]; then
     for k_value in "${k_values[@]}"; do
         for avg_on_runs_flag in "${avg_on_runs[@]}"; do
             if [ "${avg_on_runs_flag}" == "true" ]; then
-                first_avg_on_runs="--first-avg-on-runs"
-                second_avg_on_runs="--second-avg-on-runs"
+                first_avg_on_runs=("--first-avg-on-runs")
+                second_avg_on_runs=("--second-avg-on-runs")
                 title_suffix=""
                 plots_directory="${plots_root_dir}/boxplots/k_value_based"
                 out_file_spec=""
-                statistical_test="wilcoxon"
+                # statistical_test="wilcoxon"
             else
-                first_avg_on_runs=""
-                second_avg_on_runs=""
+                first_avg_on_runs=()
+                second_avg_on_runs=()
                 title_suffix=", no avg"
                 plots_directory="${plots_root_dir}/boxplots_no_avg_on_runs/k_value_based"
                 out_file_spec="no_avg_on_runs-"
-                statistical_test="ranksums"
+                # statistical_test="ranksums"
             fi
 
             for metric in "${metrics[@]}"; do
@@ -359,10 +359,10 @@ if [ "${k_value_based_box}" == "true" ]; then
                     python visualization/generate_boxplot.py \
                            --first-cltd-res-file "${first_cltd_res_file}" --first-exec-type "local_simulation" \
                            --first-encodings "${encodings[0]}" --first-datasets "${datasets[@]}" --first-kvalues "${k_value}" \
-                           ${first_avg_on_runs} --first-dist-estimate "${dist_estimate}" \
+                           "${first_avg_on_runs[@]}" --first-dist-estimate "${dist_estimate}" \
                            --second-cltd-res-file "${second_cltd_res_file}" --second-exec-type "local_simulation" \
                            --second-encodings "${encodings[1]}" --second-datasets "${datasets[@]}" --second-kvalues "${k_value}" \
-                           ${second_avg_on_runs} --second-dist-estimate "${dist_estimate}" \
+                           "${second_avg_on_runs[@]}" --second-dist-estimate "${dist_estimate}" \
                            --metric "${metric}" --x-axis-prop "dataset" \
                            --legend-labels "${encodings[@]}" --legend-position "${legend_position}" \
                            --x-ticks-labels "${datasets_strings[@]}"  --x-label "dataset" --y-label "${metric_name}" \
@@ -376,10 +376,10 @@ if [ "${k_value_based_box}" == "true" ]; then
                     python visualization/generate_boxplot.py \
                            --first-cltd-res-file "${first_cltd_res_file}" --first-exec-type "local_simulation" \
                            --first-encodings "${encoding}" --first-datasets "${datasets[@]}" --first-kvalues "${k_value}" \
-                           ${first_avg_on_runs} --first-dist-estimate "${dist_estimates[0]}" \
+                           "${first_avg_on_runs[@]}" --first-dist-estimate "${dist_estimates[0]}" \
                            --second-cltd-res-file "${second_cltd_res_file}" --second-exec-type "local_simulation" \
                            --second-encodings "${encoding}" --second-datasets "${datasets[@]}" --second-kvalues "${k_value}" \
-                           ${second_avg_on_runs} --second-dist-estimate "${dist_estimates[1]}" \
+                           "${second_avg_on_runs[@]}" --second-dist-estimate "${dist_estimates[1]}" \
                            --metric "${metric}" --x-axis-prop "dataset" \
                            --legend-labels "${dist_estimates[@]}" --legend-position "${legend_position}" \
                            --x-ticks-labels "${datasets_strings[@]}"  --x-label "dataset" --y-label "${metric_name}" \
