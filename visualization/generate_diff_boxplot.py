@@ -7,19 +7,30 @@ import os
 from utils import load_data, get_adaptive_limits
 
 
-def generate_diff_boxplot(bp_data, x_ticks_labels, x_label, y_label, title, y_limits, out_file):
+def generate_diff_boxplot(bp_data, vertical_sep, x_ticks_labels, x_label, y_label, title, y_limits, out_file):
     matplotlib.rcParams['figure.dpi'] = 300
 
     # Create the figure
-    width, height = 9, 8
+    width, height = (9, 9) if len(bp_data) <= 4 else (10.5, 10.5)
     plt.figure(figsize=(width, height))
 
+    # Define the position information
+    position_multiplier = 1.0 if not vertical_sep else 2.0
+    boxes_positions = np.arange(1, len(bp_data) + 1) * position_multiplier
+    x_ticks_positions = np.arange(1, len(bp_data) + 1) * position_multiplier
+    x_limits = np.array([0 + (0.5 if vertical_sep else 0.0),
+                         len(bp_data) + (0.5 if vertical_sep else 1.0)]) * position_multiplier
+
     # Generate the boxplot
-    plt.boxplot(bp_data)
+    plt.boxplot(bp_data, positions=boxes_positions)
 
     # Plot a horizontal dashed line for zero difference
-    x_left_limit, x_right_limit = 0, len(bp_data) + 1
-    plt.hlines(0, x_left_limit, x_right_limit, label='Zero difference', linestyles='--', colors='grey')
+    plt.hlines(0, x_limits[0], x_limits[1], label='Zero diff.', linestyles='--', colors='firebrick')
+
+    # Plot vertical dashed lines to separate boxes, if required
+    if vertical_sep:
+        for i in range(1, len(bp_data)):
+            plt.vlines((i + 0.5) * position_multiplier, y_limits[0], y_limits[1], linestyles=':', colors='black')
 
     # Fontsizes
     title_fontsize = 15
@@ -28,7 +39,7 @@ def generate_diff_boxplot(bp_data, x_ticks_labels, x_label, y_label, title, y_li
     legend_fontsize = 13
 
     # Set other properties
-    plt.xticks(np.arange(1, len(bp_data) + 1), x_ticks_labels)
+    plt.xticks(x_ticks_positions, x_ticks_labels)
     plt.tick_params(axis='both', which='major', labelsize=tick_label_fontsize)
     plt.legend(fontsize=legend_fontsize)
 
@@ -36,7 +47,7 @@ def generate_diff_boxplot(bp_data, x_ticks_labels, x_label, y_label, title, y_li
     plt.ylabel(y_label, fontsize=axis_label_fontsize, labelpad=16)
     plt.title(title, fontsize=title_fontsize, pad=18)
 
-    plt.xlim(x_left_limit, x_right_limit)
+    plt.xlim(x_limits[0], x_limits[1])
     plt.ylim(y_limits[0], y_limits[1])
 
     # Save the figure
@@ -47,8 +58,8 @@ def generate_diff_boxplot(bp_data, x_ticks_labels, x_label, y_label, title, y_li
 
 def main(baseline_cltd_res_file, baseline_exec_type, baseline_encodings, baseline_datasets, baseline_kvalues,
          baseline_avg_on_runs, baseline_dist_estimate, cltd_res_file, exec_type, encodings, datasets, kvalues,
-         avg_on_runs, dist_estimate, metric, x_ticks_labels, x_label, y_label, title, adaptive_y_limits, y_limits,
-         out_file):
+         avg_on_runs, dist_estimate, metric, vertical_sep, x_ticks_labels, x_label, y_label, title,
+         adaptive_y_limits, y_limits, out_file):
     boxplot_data = []
 
     # Load data and compute the differences
@@ -63,13 +74,14 @@ def main(baseline_cltd_res_file, baseline_exec_type, baseline_encodings, baselin
         boxplot_data.append(list(np.array(comparison_data) - np.array(baseline_data)))
 
     # Pre-plotting operations
+    x_ticks_labels = [x_tick_label.replace('\\n', '\n') for x_tick_label in x_ticks_labels]
     title = title.replace('\\n', '\n')
     if adaptive_y_limits:
         y_limits = get_adaptive_limits(boxplot_data, [])
     os.makedirs(os.path.dirname(out_file), exist_ok=True)
 
     # Generate the plot
-    generate_diff_boxplot(boxplot_data, x_ticks_labels, x_label, y_label, title, y_limits, out_file)
+    generate_diff_boxplot(boxplot_data, vertical_sep, x_ticks_labels, x_label, y_label, title, y_limits, out_file)
 
 
 if __name__ == '__main__':
@@ -105,6 +117,8 @@ if __name__ == '__main__':
                         help='comparison distance estimate.')
     parser.add_argument('--metric', metavar='metric', type=str, nargs='?', default='accuracy', help='metric to plot, '
                         'allowed values: accuracy, jaccard_index, average_jaccard_index (accuracy is used by default).')
+    parser.add_argument('--vertical-separation', dest='vertical_separation', action='store_const', const=True,
+                        default=False, help='separate the boxes with vertical lines.')
     parser.add_argument('--x-ticks-labels', metavar='x_ticks_labels', type=str, nargs='+', default=[],
                         help='ticks labels for the x axis.')
     parser.add_argument('--x-label', metavar='x_label', type=str, nargs='?', default='', help='label for the x axis.')
@@ -124,5 +138,5 @@ if __name__ == '__main__':
         main(args.baseline_cltd_res_file, args.baseline_exec_type, args.baseline_encodings, args.baseline_datasets,
              args.baseline_kvalues, args.baseline_avg_on_runs, args.baseline_dist_estimate, args.cltd_res_file,
              args.exec_type, args.encodings, args.datasets, args.kvalues, args.avg_on_runs, args.dist_estimate,
-             args.metric, args.x_ticks_labels, args.x_label, args.y_label, args.title, args.adaptive_y_limits,
-             args.y_limits, args.out_file)
+             args.metric, args.vertical_separation, args.x_ticks_labels, args.x_label, args.y_label, args.title,
+             args.adaptive_y_limits, args.y_limits, args.out_file)

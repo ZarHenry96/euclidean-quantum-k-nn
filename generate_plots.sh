@@ -1,7 +1,7 @@
 #!/usr/bin/bash
 
 exps_res_file="results/exps_first_round/collected_results.json"
-baseline_res_file="results/qml_pipeline_paper_results/baseline_collected_results.json"
+classical_baseline_res_file="results/qml_pipeline_paper_results/baseline_collected_results.json"
 num_shots_res_file="results/exps_diff_num_shots/#_shots/collected_results.json"
 
 plots_root_dir="results/exps_first_round/plots"
@@ -13,10 +13,11 @@ dist_estimates_comp_scatter="true"
 extra_comp_scatter="true"
 dataset_based_box="false"
 k_value_based_box="false"
-baseline_qknn_comp_scatter="false"
+classical_baseline_qknn_comp_scatter="false"
 diff_nums_shots_exec_types_comp_scatter="false"
 nums_shots_comp_scatter="false"
 num_shots_diff_box="false"
+comp_summary_diff_box="true"
 
 
 if [ "${exec_types_comp_scatter}" == "true" ]; then
@@ -392,10 +393,10 @@ if [ "${k_value_based_box}" == "true" ]; then
 fi
 
 
-if [ "${baseline_qknn_comp_scatter}" == "true" ]; then
-    echo "Scatter plots: comparisons of quantum k-NN and baseline methods"
+if [ "${classical_baseline_qknn_comp_scatter}" == "true" ]; then
+    echo "Scatter plots: comparisons of classical baseline methods and quantum k-NN"
 
-    cltd_res_file_x="${baseline_res_file}"
+    cltd_res_file_x="${classical_baseline_res_file}"
     cltd_res_file_y="${exps_res_file}"
 
     declare -a baseline_methods=("knn_cosine" "random_forest" "svm_linear" "svm_rbf")
@@ -595,18 +596,89 @@ if [ "${num_shots_diff_box}" == "true" ]; then
                 metric_name="${metric//_/ }"
                 metric_name="${metric_name//j/J}"
 
-                y_limits=(-0.2 0.3)
+                y_limits=(-0.3 0.3)
                 if [ "${metric}" == "accuracy" ]; then
                     y_limits=(-0.4 0.4)
                 fi
 
                 python visualization/generate_diff_boxplot.py "${baseline_args[@]}" "${comp_args[@]}" \
                        --metric "${metric}" --x-ticks-labels "${x_ticks_labels[@]}" \
-                       --x-label "Number of shots compared to ${baseline_num_shots}" --y-label "Difference in avg. '${metric_name}'" \
-                       --title "Distribution of fold avg. '${metric_name}' difference w.r.t. ${baseline_num_shots}\\nshots (config: simulation, ${encoding}, ${dist_estimate})" \
+                       --x-label "Number of shots compared to ${baseline_num_shots}" \
+                       --y-label "Difference in avg. '${metric_name}'" \
+                       --title "Distribution of fold avg. '${metric_name}' difference w.r.t. ${baseline_num_shots}\nshots (config: simulation, ${encoding}, ${dist_estimate})" \
                        --y-limits "${y_limits[@]}" \
                        --out-file "${plots_directory}/${metric}/simulation_${encoding}_${dist_estimate}-${metric}_num_shots_diff_boxplot${extension}"
             done
         done
+    done
+fi
+
+
+if [ "${comp_summary_diff_box}" == "true" ]; then
+    echo "Difference box plots: summary of comparisons (encodings and distance estimates)"
+
+    baseline_cltd_res_file="${exps_res_file}"
+    comp_cltd_res_file="${exps_res_file}"
+
+    declare -a baseline_encodings=("translation" "translation" "extension" "translation" "translation")
+    declare -a comp_encodings=("extension" "extension" "extension" "translation" "extension")
+
+    declare -a datasets=("01_iris_setosa_versicolor" "01_iris_setosa_virginica" "01_iris_versicolor_virginica"
+                         "02_transfusion" "03_vertebral_column_2C" "04_seeds_1_2" "05_ecoli_cp_im" "06_glasses_1_2"
+                         "07_breast_tissue_adi_fadmasgla" "08_breast_cancer" "09_accent_recognition_uk_us" "10_leaf_11_9")
+
+    declare -a k_values=(3 5 7 9)
+
+    declare -a baseline_dist_estimates=("avg" "diff" "diff" "diff" "diff")
+    declare -a comp_dist_estimates=("avg" "diff" "avg" "avg" "avg")
+
+    declare -a metrics=("accuracy" "jaccard_index" "average_jaccard_index")
+
+    plots_directory="${plots_root_dir}/diff_boxplots/comp_summary"
+
+    baseline_args=()
+    comp_args=()
+    x_ticks_labels=()
+    last_comp_index=$((${#comp_encodings[@]} - 1))
+    for i in $(seq 0 ${last_comp_index}); do
+        baseline_encoding="${baseline_encodings[i]}"
+        baseline_dist_estimate="${baseline_dist_estimates[i]}"
+        comp_encoding="${comp_encodings[i]}"
+        comp_dist_estimate="${comp_dist_estimates[i]}"
+
+        baseline_args+=("--baseline-cltd-res-file" "${baseline_cltd_res_file}"
+                        "--baseline-exec-type" "local_simulation"
+                        "--baseline-encodings" "${baseline_encoding}"
+                        "--baseline-datasets" "${datasets[@]}"
+                        "--baseline-kvalues" "${k_values[@]}"
+                        "--baseline-avg-on-runs"
+                        "--baseline-dist-estimate" "${baseline_dist_estimate}")
+
+        comp_args+=("--cltd-res-file" "${comp_cltd_res_file}"
+                    "--exec-type" "local_simulation"
+                    "--encodings" "${comp_encoding}"
+                    "--datasets" "${datasets[@]}"
+                    "--kvalues" "${k_values[@]}"
+                    "--avg-on-runs"
+                    "--dist-estimate" "${comp_dist_estimate}")
+
+        x_ticks_labels+=("(${comp_encoding}, ${comp_dist_estimate})\n-\n(${baseline_encoding}, ${baseline_dist_estimate})")
+    done
+
+    for metric in "${metrics[@]}"; do
+        metric_name="${metric//_/ }"
+        metric_name="${metric_name//j/J}"
+
+        y_limits=(-0.2 0.2)
+        if [ "${metric}" == "accuracy" ]; then
+            y_limits=(-0.55 0.55)
+        fi
+
+        python visualization/generate_diff_boxplot.py "${baseline_args[@]}" "${comp_args[@]}" \
+               --metric "${metric}" --vertical-separation --x-ticks-labels "${x_ticks_labels[@]}" \
+               --x-label "Configurations compared" --y-label "Difference in avg. '${metric_name}'" \
+               --title "Distribution of fold avg. '${metric_name}' difference\nfor various configurations comparisons" \
+               --y-limits "${y_limits[@]}" \
+               --out-file "${plots_directory}/${metric}/encodings_and_dist_estimates_comp_summary-${metric}_diff_boxplot${extension}"
     done
 fi
