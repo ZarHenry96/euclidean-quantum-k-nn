@@ -246,14 +246,14 @@ if [ "${dataset_based_box}" == "true" ]; then
                 first_avg_on_runs=("--first-avg-on-runs")
                 second_avg_on_runs=("--second-avg-on-runs")
                 title_suffix=""
-                plots_directory="${plots_root_dir}/boxplots/dataset_based"
+                plots_directory="${plots_root_dir}/boxplots/avg_on_runs/dataset_based"
                 out_file_spec=""
                 # statistical_test="wilcoxon"
             else
                 first_avg_on_runs=()
                 second_avg_on_runs=()
                 title_suffix=", no avg"
-                plots_directory="${plots_root_dir}/boxplots_no_avg_on_runs/dataset_based"
+                plots_directory="${plots_root_dir}/boxplots/no_avg_on_runs/dataset_based"
                 out_file_spec="no_avg_on_runs-"
                 # statistical_test="ranksums"
             fi
@@ -334,14 +334,14 @@ if [ "${k_value_based_box}" == "true" ]; then
                 first_avg_on_runs=("--first-avg-on-runs")
                 second_avg_on_runs=("--second-avg-on-runs")
                 title_suffix=""
-                plots_directory="${plots_root_dir}/boxplots/k_value_based"
+                plots_directory="${plots_root_dir}/boxplots/avg_on_runs/k_value_based"
                 out_file_spec=""
                 # statistical_test="wilcoxon"
             else
                 first_avg_on_runs=()
                 second_avg_on_runs=()
                 title_suffix=", no avg"
-                plots_directory="${plots_root_dir}/boxplots_no_avg_on_runs/k_value_based"
+                plots_directory="${plots_root_dir}/boxplots/no_avg_on_runs/k_value_based"
                 out_file_spec="no_avg_on_runs-"
                 # statistical_test="ranksums"
             fi
