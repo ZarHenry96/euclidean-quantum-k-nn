@@ -596,7 +596,7 @@ if [ "${num_shots_diff_box}" == "true" ]; then
                 metric_name="${metric//_/ }"
                 metric_name="${metric_name//j/J}"
 
-                y_limits=(-0.3 0.3)
+                y_limits=(-0.2 0.35)
                 if [ "${metric}" == "accuracy" ]; then
                     y_limits=(-0.4 0.4)
                 fi

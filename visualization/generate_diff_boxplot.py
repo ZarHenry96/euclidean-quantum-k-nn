@@ -25,8 +25,13 @@ def generate_diff_boxplot(bp_data, show_means, vertical_sep, x_ticks_labels, x_l
     # Generate the boxplot
     plt.boxplot(bp_data, positions=boxes_positions, showmeans=show_means)
 
+    # Add legend information
+    if show_means:
+        plt.plot([], [], '^', linewidth=1, color='#2ca02c', label='mean')
+    plt.plot([], [], '-', linewidth=1, color='#ff7f0e', label='median')
+
     # Plot a horizontal dashed line for zero difference
-    plt.hlines(0, x_limits[0], x_limits[1], label='Zero diff.', linestyles='--', colors='firebrick')
+    plt.hlines(0, x_limits[0], x_limits[1], label='zero diff.', linestyles='--', colors='firebrick')
 
     # Plot vertical dashed lines to separate boxes, if required
     if vertical_sep:
@@ -37,7 +42,7 @@ def generate_diff_boxplot(bp_data, show_means, vertical_sep, x_ticks_labels, x_l
     title_fontsize = 15
     axis_label_fontsize = 13
     tick_label_fontsize = 13
-    legend_fontsize = 13
+    legend_fontsize = 12
 
     # Set other properties
     plt.xticks(x_ticks_positions, x_ticks_labels)
