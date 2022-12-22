@@ -70,7 +70,7 @@ def compute_diff_box_statistics(bp_data, x_ticks_labels, statistical_tests, stat
 
         for statistical_test in statistical_tests:
             for diff_vals, x_tick_label in zip(bp_data, x_ticks_labels):
-                x_tick_label = x_tick_label.replace('\n', ' ')
+                x_tick_label = x_tick_label.replace(',', '').replace('\n', ' ')
 
                 two_sided_statistic, two_sided_p_value, two_sided_is_significant = \
                     compute_statistic(statistical_test, diff_vals)
