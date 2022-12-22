@@ -602,12 +602,13 @@ if [ "${num_shots_diff_box}" == "true" ]; then
                 fi
 
                 python visualization/generate_diff_boxplot.py "${baseline_args[@]}" "${comp_args[@]}" \
-                       --metric "${metric}" --x-ticks-labels "${x_ticks_labels[@]}" \
+                       --metric "${metric}" --show-means --x-ticks-labels "${x_ticks_labels[@]}" \
                        --x-label "Number of shots compared to ${baseline_num_shots}" \
                        --y-label "Difference in avg. '${metric_name}'" \
                        --title "Distribution of fold avg. '${metric_name}' difference w.r.t. ${baseline_num_shots}\nshots (config: simulation, ${encoding}, ${dist_estimate})" \
                        --y-limits "${y_limits[@]}" \
-                       --out-file "${plots_directory}/${metric}/simulation_${encoding}_${dist_estimate}-${metric}_num_shots_diff_boxplot${extension}"
+                       --out-file "${plots_directory}/${metric}/simulation_${encoding}_${dist_estimate}-${metric}_num_shots_diff_boxplot${extension}" \
+                       --statistical-tests "ttest-1samp" "wilcoxon"
             done
         done
     done
@@ -675,10 +676,11 @@ if [ "${comp_summary_diff_box}" == "true" ]; then
         fi
 
         python visualization/generate_diff_boxplot.py "${baseline_args[@]}" "${comp_args[@]}" \
-               --metric "${metric}" --vertical-separation --x-ticks-labels "${x_ticks_labels[@]}" \
+               --metric "${metric}" --show-means --vertical-separation --x-ticks-labels "${x_ticks_labels[@]}" \
                --x-label "Configurations compared" --y-label "Difference in avg. '${metric_name}'" \
                --title "Distribution of fold avg. '${metric_name}' difference\nfor various configurations comparisons" \
                --y-limits "${y_limits[@]}" \
-               --out-file "${plots_directory}/${metric}/encodings_and_dist_estimates_comp_summary-${metric}_diff_boxplot${extension}"
+               --out-file "${plots_directory}/${metric}/encodings_and_dist_estimates_comp_summary-${metric}_diff_boxplot${extension}" \
+               --statistical-tests "ttest-1samp" "wilcoxon"
     done
 fi
