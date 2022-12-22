@@ -12,7 +12,7 @@ def generate_diff_boxplot(bp_data, show_means, vertical_sep, x_ticks_labels, x_l
     matplotlib.rcParams['figure.dpi'] = 300
 
     # Create the figure
-    width, height = (9, 9) if len(bp_data) <= 4 else (10.5, 10.5)
+    width, height = (9, 9) if len(bp_data) <= 4 else (12, 12)
     plt.figure(figsize=(width, height))
 
     # Define the position information
@@ -65,6 +65,8 @@ def compute_diff_box_statistics(bp_data, x_ticks_labels, statistical_tests, stat
 
         for statistical_test in statistical_tests:
             for diff_vals, x_tick_label in zip(bp_data, x_ticks_labels):
+                x_tick_label = x_tick_label.replace('\n', ' ')
+
                 two_sided_statistic, two_sided_p_value, two_sided_is_significant = \
                     compute_statistic(statistical_test, diff_vals)
 

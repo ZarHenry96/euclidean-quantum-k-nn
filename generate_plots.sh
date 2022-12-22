@@ -621,8 +621,8 @@ if [ "${comp_summary_diff_box}" == "true" ]; then
     baseline_cltd_res_file="${exps_res_file}"
     comp_cltd_res_file="${exps_res_file}"
 
-    declare -a baseline_encodings=("translation" "translation" "extension" "translation" "translation")
-    declare -a comp_encodings=("extension" "extension" "extension" "translation" "extension")
+    declare -a comp_encodings=("extension" "extension" "extension" "extension" "extension" "translation")
+    declare -a baseline_encodings=("extension" "translation" "translation" "translation" "translation" "translation")
 
     declare -a datasets=("01_iris_setosa_versicolor" "01_iris_setosa_virginica" "01_iris_versicolor_virginica"
                          "02_transfusion" "03_vertebral_column_2C" "04_seeds_1_2" "05_ecoli_cp_im" "06_glasses_1_2"
@@ -630,8 +630,8 @@ if [ "${comp_summary_diff_box}" == "true" ]; then
 
     declare -a k_values=(3 5 7 9)
 
-    declare -a baseline_dist_estimates=("avg" "diff" "diff" "diff" "diff")
-    declare -a comp_dist_estimates=("avg" "diff" "avg" "avg" "avg")
+    declare -a comp_dist_estimates=("avg" "avg" "avg" "diff" "diff" "avg")
+    declare -a baseline_dist_estimates=("diff" "avg" "diff" "avg" "diff" "diff")
 
     declare -a metrics=("accuracy" "jaccard_index" "average_jaccard_index")
 
