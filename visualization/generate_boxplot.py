@@ -8,7 +8,9 @@ from utils import load_data, get_adaptive_limits, compute_statistic
 
 
 def generate_boxplot(bp_data, x_ticks_labels, x_label, y_label, title, y_limits, out_file):
-    matplotlib.rcParams['figure.dpi'] = 300
+    matplotlib.rcParams['figure.dpi'] = 600
+    matplotlib.rcParams['pdf.fonttype'] = 42
+    matplotlib.rcParams['ps.fonttype'] = 42
 
     # Create the figure
     width, height = min(max(3 + len(bp_data), 9), 16), 9
@@ -64,7 +66,9 @@ def set_bp_color(bp, color, background_color, median_color):
 
 def generate_multi_boxplot(bp_data, legend_labels, legend_position, x_ticks_labels, x_label, y_label, title, y_limits,
                            out_file):
-    matplotlib.rcParams['figure.dpi'] = 300
+    matplotlib.rcParams['figure.dpi'] = 600
+    matplotlib.rcParams['pdf.fonttype'] = 42
+    matplotlib.rcParams['ps.fonttype'] = 42
 
     boxplots_num, ticks_num = len(bp_data), len(x_ticks_labels)
 

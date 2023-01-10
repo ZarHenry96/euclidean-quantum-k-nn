@@ -9,7 +9,7 @@ from utils import load_data, get_adaptive_limits, compute_statistic
 def generate_scatterplot(x_data, y_data, legend_labels, legend_position, x_label, y_label, title, plot_limits,
                          out_file, verbose):
     if out_file.endswith('.pdf'):
-        dpi = 300
+        dpi = 600
         width, height = (9, 9) if '\\n' not in title else (10, 10)
     else:
         dpi = 150
@@ -17,6 +17,8 @@ def generate_scatterplot(x_data, y_data, legend_labels, legend_position, x_label
         width, height = 1350*px, 1350*px
 
     matplotlib.rcParams['figure.dpi'] = dpi
+    matplotlib.rcParams['pdf.fonttype'] = 42
+    matplotlib.rcParams['ps.fonttype'] = 42
     fig, ax = plt.subplots(figsize=(width, height))
 
     title_fontsize = 21
