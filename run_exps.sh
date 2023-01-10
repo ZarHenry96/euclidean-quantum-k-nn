@@ -80,6 +80,10 @@ for dist_estimate in "${dist_estimates[@]}"; do
 done
 dist_estimates_str="${dist_estimates_str%??}"
 
+# Initialize the variables related to the "simulator seeds" seeds
+sim_seeds_seeds_index=0
+num_sim_seeds_seeds=${#sim_seeds_seeds[@]}
+
 # Create a temporary directory to store the experiments configuration files
 tmp_dir="tmp"
 mkdir -p "${tmp_dir}"
@@ -123,10 +127,14 @@ for template_file in "${exp_templates_dir}"/*.template; do
                 # Iterate over runs
                 for run in $(seq 0 $((runs_for_exec_type - 1))); do
                     # Get the "simulator seeds" seed for the current run
-                    if (( run < ${#sim_seeds_seeds[@]} )); then
-                        sim_seeds_seed="${sim_seeds_seeds[run]}"
-                    else
-                        sim_seeds_seed="${RANDOM}"
+                    sim_seeds_seed="null"
+                    if [ "${exec_type}" == "local_simulation" ] || [ "${exec_type}" == "online_simulation" ]; then
+                        if (( sim_seeds_seeds_index < num_sim_seeds_seeds )); then
+                            sim_seeds_seed="${sim_seeds_seeds[sim_seeds_seeds_index]}"
+                            sim_seeds_seeds_index=$((sim_seeds_seeds_index + 1))
+                        else
+                            sim_seeds_seed="${RANDOM}"
+                        fi
                     fi
 
                     # Set the results directory and the config filename for the experiment
