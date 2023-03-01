@@ -9,6 +9,7 @@ from utils import load_data, get_adaptive_limits, compute_statistic
 
 def generate_diff_boxplot(bp_data, show_means, vertical_sep, x_ticks_labels, x_label, y_label, title, y_limits,
                           out_file):
+    matplotlib.set_loglevel('error')
     matplotlib.rcParams['figure.dpi'] = 600
     matplotlib.rcParams['pdf.fonttype'] = 42
     matplotlib.rcParams['ps.fonttype'] = 42
