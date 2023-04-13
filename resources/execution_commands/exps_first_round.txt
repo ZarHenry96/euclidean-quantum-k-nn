@@ -1,0 +1,1 @@
+./run_exps.sh -e experiments/templates -d data/datasets -f 5 -o 7 -r results/exps_first_round -v true -k 3 -k 5 -k 7 -k 9 -n extension -n translation -s 1024 -p 10 -u 5 -t zero -t one -t avg -t diff -c true -m 10

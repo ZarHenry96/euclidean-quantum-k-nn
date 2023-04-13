@@ -1,22 +1,22 @@
 #!/usr/bin/bash
 
-exps_res_file="results/exps_first_round/collected_results.json"
-classical_baseline_res_file="results/qml_pipeline_paper_results/baseline_collected_results.json"
-num_shots_res_file="results/exps_diff_num_shots/#_shots/collected_results.json"
+exps_res_file="resources/collected_results/exps_first_round/collected_results.json"
+classical_baseline_res_file="resources/collected_results/baseline_methods/collected_results.json"
+num_shots_res_file="resources/collected_results/exps_diff_num_shots/#_shots/collected_results.json"
 
-plots_root_dir="results/exps_first_round/plots"
+plots_root_dir="results/plots"
 extension=".pdf"
 
 exec_types_comp_scatter="true"
-encodings_comp_scatter="true"
-dist_estimates_comp_scatter="true"
-extra_comp_scatter="true"
+encodings_comp_scatter="false"
+dist_estimates_comp_scatter="false"
+extra_comp_scatter="false"
 dataset_based_box="false"
 k_value_based_box="false"
-classical_baseline_qknn_comp_scatter="false"
+classical_baseline_qknn_comp_scatter="true"
 diff_nums_shots_exec_types_comp_scatter="false"
 nums_shots_comp_scatter="false"
-num_shots_diff_box="false"
+num_shots_diff_box="true"
 comp_summary_diff_box="true"
 
 

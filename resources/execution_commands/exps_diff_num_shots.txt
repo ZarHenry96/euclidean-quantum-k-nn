@@ -1,0 +1,7 @@
+./run_exps.sh -e experiments/templates -d data/datasets -f 5 -o 7 -r results/exps_diff_num_shots/8192_shots -v true -k 3 -k 5 -k 7 -k 9 -n extension -s 8192 -p 10 -u 5 -t avg -c true -m 10
+
+./run_exps.sh -e experiments/templates -d data/datasets -f 5 -o 7 -r results/exps_diff_num_shots/4096_shots -v true -k 3 -k 5 -k 7 -k 9 -n extension -s 4096 -p 10 -u 5 -t avg -c true -m 10
+
+./run_exps.sh -e experiments/templates -d data/datasets -f 5 -o 7 -r results/exps_diff_num_shots/2048_shots -v true -k 3 -k 5 -k 7 -k 9 -n extension -s 2048 -p 10 -u 5 -t avg -c true -m 10
+
+./run_exps.sh -e experiments/templates -d data/datasets -f 5 -o 7 -r results/exps_diff_num_shots/512_shots -v true -k 3 -k 5 -k 7 -k 9 -n extension -s 512 -p 10 -u 5 -t avg -c true -m 10
