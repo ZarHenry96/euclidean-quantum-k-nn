@@ -1,5 +1,5 @@
-# A quantum k-NN based on the Euclidean distance
-This repository provides the code for the "A quantum k-nearest neighbors algorithm based on the Euclidean distance" article.
+# A quantum k-NN based on the Euclidean distance estimation
+This repository provides the code for the article "A quantum k-nearest neighbors algorithm based on the Euclidean distance estimation".
 
 ## 1. Prerequisites
 In order to run the code, you need to have Python 3 installed. In particular, Python 3.8.10 has been used for the experiments presented in the paper. If you do not have Python 3 on your machine, we suggest to install Anaconda Python.
